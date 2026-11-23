@@ -1,0 +1,2672 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GameJam Studio — Suite Indie 2D</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & JetBrains Mono & Press Start 2P -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                        pixel: ['"Press Start 2P"', 'cursive'],
+                    },
+                    colors: {
+                        studio: {
+                            bg: '#0b0e14',
+                            panel: '#131722',
+                            card: '#1a202e',
+                            border: '#283044',
+                            accent: '#8b5cf6', // Violeta
+                            cyan: '#06b6d4',   // Cian
+                            emerald: '#10b981',// Verde neón suave
+                            amber: '#f59e0b',
+                            rose: '#f43f5e'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Estilos personalizados para estética de motor indie y pixel art */
+        body {
+            background-color: #0b0e14;
+            color: #e2e8f0;
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        /* Renderizado nítido para canvas pixel art */
+        canvas.pixelated {
+            image-rendering: -moz-crisp-edges;
+            image-rendering: -webkit-crisp-edges;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        /* Fondo de tablero de ajedrez para transparencia */
+        .checkerboard {
+            background-color: #161b26;
+            background-image: 
+                linear-gradient(45deg, #212838 25%, transparent 25%), 
+                linear-gradient(-45deg, #212838 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #212838 75%), 
+                linear-gradient(-45deg, transparent 75%, #212838 75%);
+            background-size: 16px 16px;
+            background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+        }
+
+        /* Sliders personalizados estilo retro-synth */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 12px;
+            border-radius: 3px;
+            background: #06b6d4;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 0 8px rgba(6, 182, 212, 0.6);
+            border: 1px solid #cffafe;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #283044;
+            border-radius: 2px;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        /* Scrollbar sutil */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b0e14;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #283044;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3b4764;
+        }
+
+        .tab-active {
+            background: linear-gradient(180deg, rgba(139, 92, 246, 0.15) 0%, rgba(139, 92, 246, 0.02) 100%);
+            border-bottom: 2px solid #8b5cf6;
+            color: #fff;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans antialiased">
+
+    <!-- Notificación Toast Flotante -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Barra Superior (Header) -->
+    <header class="bg-studio-panel border-b border-studio-border sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between py-3 gap-3">
+                <!-- Logo y Título -->
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-violet-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-violet-500/20">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h1 class="font-pixel text-xs sm:text-sm tracking-wider text-white">GameJam <span class="text-cyan-400">Studio</span></h1>
+                                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">v1.0 INDIE</span>
+                            </div>
+                            <p class="text-xs text-slate-400 hidden sm:block">Suite de prototipado rápido: Sprites • SFX 8-Bit • Paletas • Narrativa</p>
+                        </div>
+                    </div>
+
+                    <!-- Botón Sandbox rápido en móvil -->
+                    <button onclick="switchTab('sandbox')" class="md:hidden px-3 py-1.5 rounded-lg bg-emerald-600/20 border border-emerald-500/40 text-emerald-300 text-xs font-medium flex items-center gap-1.5">
+                        <span>▶</span> Probar
+                    </button>
+                </div>
+
+                <!-- Navegación por Pestañas (Tabs) -->
+                <nav class="flex items-center overflow-x-auto no-scrollbar gap-1 sm:gap-2 pb-1 md:pb-0">
+                    <button onclick="switchTab('sprites')" id="tab-btn-sprites" class="tab-btn tab-active px-3 py-2 rounded-t-lg text-xs sm:text-sm font-medium text-slate-400 hover:text-white transition flex items-center gap-2 whitespace-nowrap">
+                        <svg class="w-4 h-4 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                        <span>1. Sprites</span>
+                    </button>
+
+                    <button onclick="switchTab('sfx')" id="tab-btn-sfx" class="tab-btn px-3 py-2 rounded-t-lg text-xs sm:text-sm font-medium text-slate-400 hover:text-white transition flex items-center gap-2 whitespace-nowrap">
+                        <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+                        <span>2. SFX 8-Bit</span>
+                    </button>
+
+                    <button onclick="switchTab('palette')" id="tab-btn-palette" class="tab-btn px-3 py-2 rounded-t-lg text-xs sm:text-sm font-medium text-slate-400 hover:text-white transition flex items-center gap-2 whitespace-nowrap">
+                        <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path></svg>
+                        <span>3. Paletas</span>
+                    </button>
+
+                    <button onclick="switchTab('narrative')" id="tab-btn-narrative" class="tab-btn px-3 py-2 rounded-t-lg text-xs sm:text-sm font-medium text-slate-400 hover:text-white transition flex items-center gap-2 whitespace-nowrap">
+                        <svg class="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                        <span>4. Narrativa & GDD</span>
+                    </button>
+
+                    <button onclick="switchTab('sandbox')" id="tab-btn-sandbox" class="tab-btn px-3 py-2 rounded-t-lg text-xs sm:text-sm font-medium text-emerald-400 hover:text-emerald-300 transition flex items-center gap-1.5 whitespace-nowrap ml-1 border border-emerald-500/30 bg-emerald-500/10">
+                        <span>▶</span>
+                        <span>Modo Prueba</span>
+                    </button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6">
+
+        <!-- ===================================================================== -->
+        <!-- SECCIÓN 1: EDITOR DE SPRITES (PIXEL ART)                              -->
+        <!-- ===================================================================== -->
+        <section id="view-sprites" class="tab-view grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- Columna Izquierda: Herramientas y Resolución -->
+            <div class="lg:col-span-3 flex flex-col gap-4">
+                <!-- Resolución y Cuadrícula -->
+                <div class="bg-studio-panel border border-studio-border rounded-xl p-4 shadow-lg">
+                    <h2 class="text-xs font-mono uppercase tracking-wider text-slate-400 mb-3 flex items-center justify-between">
+                        <span>Lienzo & Cuadrícula</span>
+                        <span id="sprite-dim-label" class="text-violet-400 font-bold">16x16</span>
+                    </h2>
+                    <div class="grid grid-cols-3 gap-2 mb-3">
+                        <button onclick="changeGridSize(8)" id="grid-btn-8" class="grid-size-btn py-1.5 px-2 rounded-lg text-xs font-mono border border-studio-border bg-studio-card hover:border-violet-500 transition">8x8</button>
+                        <button onclick="changeGridSize(16)" id="grid-btn-16" class="grid-size-btn py-1.5 px-2 rounded-lg text-xs font-mono border border-violet-500 bg-violet-600/20 text-white font-bold transition">16x16</button>
+                        <button onclick="changeGridSize(32)" id="grid-btn-32" class="grid-size-btn py-1.5 px-2 rounded-lg text-xs font-mono border border-studio-border bg-studio-card hover:border-violet-500 transition">32x32</button>
+                    </div>
+                    <label class="flex items-center justify-between text-xs text-slate-300 cursor-pointer pt-2 border-t border-studio-border/60">
+                        <span>Mostrar líneas guía</span>
+                        <input type="checkbox" id="toggle-grid-lines" checked onchange="renderSpriteCanvas()" class="accent-violet-500 rounded cursor-pointer">
+                    </label>
+                </div>
+
+                <!-- Herramientas de Dibujo -->
+                <div class="bg-studio-panel border border-studio-border rounded-xl p-4 shadow-lg">
+                    <h2 class="text-xs font-mono uppercase tracking-wider text-slate-400 mb-3">Herramientas</h2>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="selectTool('pencil')" id="tool-pencil" class="tool-btn flex items-center gap-2 p-2.5 rounded-lg border border-violet-500 bg-violet-600/20 text-white text-xs font-medium transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                            <span>Lápiz</span>
+                        </button>
+                        <button onclick="selectTool('eraser')" id="tool-eraser" class="tool-btn flex items-center gap-2 p-2.5 rounded-lg border border-studio-border bg-studio-card text-slate-300 hover:border-slate-500 text-xs font-medium transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            <span>Borrador</span>
+                        </button>
+                        <button onclick="selectTool('bucket')" id="tool-bucket" class="tool-btn flex items-center gap-2 p-2.5 rounded-lg border border-studio-border bg-studio-card text-slate-300 hover:border-slate-500 text-xs font-medium transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                            <span>Relleno</span>
+                        </button>
+                        <button onclick="selectTool('picker')" id="tool-picker" class="tool-btn flex items-center gap-2 p-2.5 rounded-lg border border-studio-border bg-studio-card text-slate-300 hover:border-slate-500 text-xs font-medium transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path></svg>
+                            <span>Gotero</span>
+                        </button>
+                    </div>
+
+                    <!-- Modificadores y Acciones -->
+                    <div class="mt-3 pt-3 border-t border-studio-border/60 flex flex-col gap-2">
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="toggleMirror('h')" id="btn-mirror-h" class="py-2 px-2.5 rounded-lg border border-studio-border bg-studio-card text-slate-300 hover:border-cyan-500 text-xs font-medium flex items-center justify-between transition" title="Espejo Horizontal">
+                                <span>↔ Espejo H</span>
+                                <span id="mirror-h-badge" class="text-[10px] font-mono px-1 py-0.5 rounded bg-slate-800 text-slate-400">OFF</span>
+                            </button>
+                            <button onclick="toggleMirror('v')" id="btn-mirror-v" class="py-2 px-2.5 rounded-lg border border-studio-border bg-studio-card text-slate-300 hover:border-cyan-500 text-xs font-medium flex items-center justify-between transition" title="Espejo Vertical">
+                                <span>↕ Espejo V</span>
+                                <span id="mirror-v-badge" class="text-[10px] font-mono px-1 py-0.5 rounded bg-slate-800 text-slate-400">OFF</span>
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-1.5">
+                            <button onclick="undoSprite()" class="py-2 px-2 rounded-lg border border-studio-border bg-studio-card hover:bg-slate-800 text-slate-300 text-xs font-medium flex items-center justify-center gap-1 transition" title="Deshacer">
+                                <span>↩</span> Deshacer
+                            </button>
+                            <button onclick="redoSprite()" class="py-2 px-2 rounded-lg border border-studio-border bg-studio-card hover:bg-slate-800 text-slate-300 text-xs font-medium flex items-center justify-center gap-1 transition" title="Rehacer">
+                                <span>↪</span> Rehacer
+                            </button>
+                            <button onclick="clearCurrentFrame()" class="py-2 px-2 rounded-lg border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-xs font-medium flex items-center justify-center gap-1 transition" title="Limpiar Frame">
+                                <span>✕</span> Limpiar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Paleta Activa -->
+                <div class="bg-studio-panel border border-studio-border rounded-xl p-4 shadow-lg">
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="text-xs font-mono uppercase tracking-wider text-slate-400">Paleta Activa</h2>
+                        <button onclick="switchTab('palette')" class="text-[11px] text-cyan-400 hover:underline">Editar paleta →</button>
+                    </div>
+                    <div class="flex items-center gap-3 mb-3">
+                        <input type="color" id="active-color-picker" value="#8b5cf6" onchange="setActiveColor(this.value)" class="w-10 h-10 rounded-lg cursor-pointer bg-transparent border-0">
+                        <div>
+                            <div class="text-xs text-slate-400">Color seleccionado</div>
+                            <div id="active-color-hex" class="font-mono text-sm font-bold text-white">#8B5CF6</div>
+                        </div>
+                    </div>
+                    <div id="sprite-palette-swatches" class="grid grid-cols-6 gap-1.5">
+                        <!-- Swatches generados dinámicamente -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna Central: Lienzo Principal y Frames -->
+            <div class="lg:col-span-6 flex flex-col items-center justify-start gap-4">
+                <div class="w-full bg-studio-panel border border-studio-border rounded-xl p-4 sm:p-6 shadow-xl flex flex-col items-center">
+                    <!-- Barra superior de Frames -->
+                    <div class="w-full flex flex-wrap items-center justify-between gap-2 mb-4 pb-3 border-b border-studio-border">
+                        <div class="flex items-center gap-1.5" id="frames-container">
+                            <!-- Botones de frames generados por JS -->
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="duplicateCurrentFrame()" title="Duplicar Frame Actual" class="px-2.5 py-1 rounded-md bg-studio-card border border-studio-border hover:border-cyan-500 text-xs text-slate-300 transition">
+                                + Duplicar Frame
+                            </button>
+                            <button onclick="addFrame()" title="Añadir Frame Vacío" class="px-2.5 py-1 rounded-md bg-violet-600/20 border border-violet-500/50 hover:bg-violet-600/30 text-xs text-violet-300 font-medium transition">
+                                + Nuevo
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Contenedor Cuadrado Responsivo del Canvas -->
+                    <div class="relative w-full max-w-[420px] aspect-square checkerboard rounded-lg border-2 border-studio-border overflow-hidden shadow-inner touch-none">
+                        <canvas id="sprite-canvas" class="w-full h-full block pixelated cursor-crosshair"></canvas>
+                    </div>
+
+                    <p class="text-[11px] text-slate-400 mt-3 text-center">
+                        Clic izquierdo / tocar para pintar • Clic derecho para borrar • Arrastra para trazar continuo
+                    </p>
+                </div>
+            </div>
+
+            <!-- Columna Derecha: Vista Previa Animada, Tilemap 3x3 y Exportación -->
+            <div class="lg:col-span-3 flex flex-col gap-4">
+                <div class="bg-studio-panel border border-studio-border rounded-xl p-4 shadow-lg">
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="text-xs font-mono uppercase tracking-wider text-slate-400">Vista Previa</h2>
+                        <div class="flex rounded-lg bg-studio-card p-0.5 border border-studio-border text-[11px] font-mono">
+                            <button onclick="setPreviewMode('anim')" id="prev-mode-anim" class="px-2 py-0.5 rounded bg-violet-600 text-white font-bold transition">Anim</button>
+                            <button onclick="setPreviewMode('tile')" id="prev-mode-tile" class="px-2 py-0.5 rounded text-slate-400 hover:text-white transition">Tile 3x3</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Caja de Previsualización -->
+                    <div class="checkerboard rounded-lg border border-studio-border p-4 flex flex-col items-center justify-center min-h-[160px] relative">
+                        <canvas id="preview-canvas" class="w-32 h-32 pixelated"></canvas>
+                        <span id="preview-badge-info" class="absolute bottom-2 right-2 text-[10px] font-mono bg-studio-bg/80 px-1.5 py-0.5 rounded text-slate-400 border border-studio-border">
+                            Frame <span id="preview-frame-num">1</span>/<span id="preview-frame-total">1</span>
+                        </span>
+                    </div>
+
+                    <!-- Controles de Reproducción -->
+                    <div id="anim-controls-box" class="mt-4 flex flex-col gap-3">
+                        <div class="flex items-center justify-between gap-2">
+                            <button onclick="toggleAnimation()" id="btn-play-anim" class="flex-1 py-2 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition shadow-lg shadow-emerald-600/20">
+                                <span id="anim-play-icon">⏸</span> <span id="anim-play-text">Pausar</span>
+                            </button>
+                            <label class="flex items-center gap-1.5 px-2.5 py-2 rounded-lg bg-studio-card border border-studio-border text-[11px] text-slate-300 cursor-pointer" title="Papel Cebolla (Frame anterior)">
+                                <input type="checkbox" id="toggle-onion-skin" checked onchange="renderSpriteCanvas()" class="accent-violet-500">
+                                <span>Onion</span>
+                            </label>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs text-slate-400 mb-1">
+                                <span>Velocidad (FPS)</span>
+                                <span id="fps-val" class="font-mono text-cyan-400 font-bold">6 FPS</span>
+                            </div>
+                            <input type="range" id="anim-fps" min="1" max="24" value="6" oninput="updateFPS(this.value)" class="w-full">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Exportación -->
+                <div class="bg-studio-panel border border-studio-border rounded-xl p-4 shadow-lg flex flex-col gap-2.5">
+                    <h2 class="text-xs font-mono uppercase tracking-wider text-slate-400 mb-1">Exportar Asset</h2>
+                    
+                    <div class="flex items-center justify-between text-xs text-slate-300 mb-1">
+                        <span>Escala de exportación:</span>
+                        <select id="export-scale" class="bg-studio-card border border-studio-border rounded px-2 py-1 font-mono text-xs text-white focus:outline-none focus:border-violet-500">
+                            <option value="1">1x (Original)</option>
+                            <option value="4">4x (HD Pixel)</option>
+                            <option value="8" selected>8x (Recomendado)</option>
+                            <option value="16">16x (Grande)</option>
+                        </select>
+                    </div>
+
+                    <button onclick="exportSpritePNG(false)" class="w-full py-2.5 px-3 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold flex items-center justify-center gap-2 transition shadow-lg shadow-violet-600/20">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        Descargar Frame (.PNG)
+                    </button>
+
+                    <button onclick="exportSpritePNG(true)" class="w-full py-2 px-3 rounded-lg bg-studio-card hover:bg-slate-800 border border-studio-border text-slate-200 text-xs font-medium flex items-center justify-center gap-2 transition">
+                        <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+                        Descargar Spritesheet (.PNG)
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===================================================================== -->
+        <!-- SECCIÓN 2: SINTETIZADOR DE EFECTOS DE SONIDO (SFX 8-BIT + LOOPS)      -->
+        <!-- ===================================================================== -->
+        <section id="view-sfx" class="tab-view hidden flex-col gap-6">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Presets Rápidos Game Jam -->
+                <div class="lg:col-span-4 bg-studio-panel border border-studio-border rounded-xl p-5 shadow-lg flex flex-col justify-between">
+                    <div>
+                        <h2 class="text-xs font-mono uppercase tracking-wider text-slate-400 mb-1">Generador Procedural 8-Bit</h2>
+                        <p class="text-xs text-slate-400 mb-3">Arquetipos clásicos de Game Jam con variaciones aleatorias.</p>
+                        
+                        <div class="grid grid-cols-3 gap-2">
+                            <button onclick="applySfxPreset('jump')" class="p-2.5 rounded-xl bg-studio-card hover:bg-violet-600/20 border border-studio-border hover:border-violet-500 text-center transition group">
+                                <div class="text-base mb-0.5">🦘</div>
+                                <div class="text-[11px] font-semibold text-white group-hover:text-violet-300">Salto</div>
+                            </button>
+
+                            <button onclick="applySfxPreset('coin')" class="p-2.5 rounded-xl bg-studio-card hover:bg-amber-600/20 border border-studio-border hover:border-amber-500 text-center transition group">
+                                <div class="text-base mb-0.5">🪙</div>
+                                <div class="text-[11px] font-semibold text-white group-hover:text-amber-300">Moneda</div>
+                            </button>
+
+                            <button onclick="applySfxPreset('laser')" class="p-2.5 rounded-xl bg-studio-card hover:bg-cyan-600/20 border border-studio-border hover:border-cyan-500 text-center transition group">
+                                <div class="text-base mb-0.5">🔫</div>
+                                <div class="text-[11px] font-semibold text-white group-hover:text-cyan-300">Láser</div>
+                            </button>
+
+                            <button onclick="applySfxPreset('explosion')" class="p-2.5 rounded-xl bg-studio-card hover:bg-rose-600/20 border border-studio-border hover:border-rose-500 text-center transition group">
+                                <div class="text-base mb-0.5">💥</div>
+                                <div class="text-[11px] font-semibold text-white group-hover:text-rose-300">Explosión</div>
+                            </button>
+
+                            <button onclick="applySfxPreset('powerup')" class="p-2.5 rounded-xl bg-studio-card hover:bg-emerald-600/20 border border-studio-border hover:border-emerald-500 text-center transition group">
+                                <div class="text-base mb-0.5">⚡</div>
+                                <div class="text-[11px] font-semibold text-white group-hover:text-emerald-300">Power-Up</div>
+                            </button>
+
+                            <button onclick="applySfxPreset('hit')" class="p-2.5 rounded-xl bg-studio-card hover:bg-orange-600/20 border border-studio-border hover:border-orange-500 text-center transition group">
+                                <div class="text-base mb-0.5">🛡️</div>
+                                <div class="text-[11px] font-semibold text-white group-hover:text-orange-300">Daño/Hit</div>
+                            </button>
+
+                            <button onclick="applySfxPreset('footstep')" class="p-2.5 rounded-xl bg-studio-card hover:bg-slate-600/30 border border-studio-border hover:border-slate-400 text-center transition group">
+                                <div class="text-base mb-0.5">👣</div>
+                                <div class="text-[11px] font-semibold text-white">Pasos</div>
+                            </button>
+
+                            <button onclick="applySfxPreset('reload')" class="p-2.5 rounded-xl bg-studio-card hover:bg-indigo-600/20 border border-studio-border hover:border-indigo-400 text-center transition group">
+                                <div class="text-base mb-0.5">🔄</div>
+                                <div class="text-[11px] font-semibold text-white">Recarga</div>
+                            </button>
+
+                            <button onclick="applySfxPreset('ui')" class="p-2.5 rounded-xl bg-studio-card hover:bg-teal-600/20 border border-studio-border hover:border-teal-400 text-center transition group">
+                                <div class="text-base mb-0.5">🖱️</div>
+                                <div class="text-[11px] font-semibold text-white">Select UI</div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button onclick="applySfxPreset('random')" class="mt-4 w-full py-3 px-4 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-500 hover:to-cyan-500 text-white text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition">
+                        <span>🎲</span> Aleatorizar SFX
+                    </button>
+                </div>
+
+                <!-- Controles de Síntesis y Visualizador -->
+                <div class="lg:col-span-8 bg-studio-panel border border-studio-border rounded-xl p-5 shadow-lg flex flex-col gap-4">
+                    
+                    <!-- Osciloscopio / Visualizador de Onda -->
+                    <div class="bg-studio-bg border border-studio-border rounded-xl p-3.5 relative">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[11px] font-mono text-cyan-400 uppercase flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                                Osciloscopio WebAudio (16-bit PCM)
+                            </span>
+                            <span id="sfx-duration-badge" class="text-[11px] font-mono text-slate-400">0.30s</span>
+                        </div>
+                        <canvas id="sfx-visualizer" class="w-full h-24 rounded-lg bg-[#080a0f] border border-studio-border/60"></canvas>
+                    </div>
+
+                    <!-- Selector de Forma de Onda -->
+                    <div>
+                        <label class="block text-xs font-mono uppercase tracking-wider text-slate-400 mb-2">Forma de Onda del Oscilador</label>
+                        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                            <button onclick="setWaveType('square')" id="wave-square" class="wave-btn py-2 px-3 rounded-lg border border-cyan-500 bg-cyan-500/20 text-white text-xs font-mono font-bold transition">⊓ Cuadrada</button>
+                            <button onclick="setWaveType('triangle')" id="wave-triangle" class="wave-btn py-2 px-3 rounded-lg border border-studio-border bg-studio-card text-slate-300 text-xs font-mono transition">△ Triángulo</button>
+                            <button onclick="setWaveType('sawtooth')" id="wave-sawtooth" class="wave-btn py-2 px-3 rounded-lg border border-studio-border bg-studio-card text-slate-300 text-xs font-mono transition">⋀ Sierra</button>
+                            <button onclick="setWaveType('sine')" id="wave-sine" class="wave-btn py-2 px-3 rounded-lg border border-studio-border bg-studio-card text-slate-300 text-xs font-mono transition">∿ Senoidal</button>
+                            <button onclick="setWaveType('noise')" id="wave-noise" class="wave-btn py-2 px-3 rounded-lg border border-studio-border bg-studio-card text-slate-300 text-xs font-mono transition">▒ Ruido</button>
+                        </div>
+                    </div>
+
+                    <!-- Sliders de Parámetros -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-5 gap-y-3 bg-studio-card/50 p-4 rounded-xl border border-studio-border">
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300">Frec. Inicial</span>
+                                <span id="val-freq" class="font-mono text-cyan-400">440 Hz</span>
+                            </div>
+                            <input type="range" id="sfx-freq" min="50" max="1800" value="440" oninput="updateSfxParam('freq', this.value)" class="w-full">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300">Slide (Frec. Final)</span>
+                                <span id="val-slide" class="font-mono text-cyan-400">+200 Hz</span>
+                            </div>
+                            <input type="range" id="sfx-slide" min="-1200" max="1200" value="200" oninput="updateSfxParam('slide', this.value)" class="w-full">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300">Duración</span>
+                                <span id="val-duration" class="font-mono text-cyan-400">0.30 s</span>
+                            </div>
+                            <input type="range" id="sfx-duration" min="0.04" max="1.5" step="0.01" value="0.30" oninput="updateSfxParam('duration', this.value)" class="w-full">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300">Ataque</span>
+                                <span id="val-attack" class="font-mono text-cyan-400">0.01 s</span>
+                            </div>
+                            <input type="range" id="sfx-attack" min="0.005" max="0.4" step="0.005" value="0.01" oninput="updateSfxParam('attack', this.value)" class="w-full">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300">Decaimiento</span>
+                                <span id="val-decay" class="font-mono text-cyan-400">0.25 s</span>
+                            </div>
+                            <input type="range" id="sfx-decay" min="0.02" max="1.2" step="0.01" value="0.25" oninput="updateSfxParam('decay', this.value)" class="w-full">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300">Vibrato / Arpegio</span>
+                                <span id="val-arp" class="font-mono text-cyan-400">0 Hz</span>
+                            </div>
+                            <input type="range" id="sfx-arp" min="0" max="600" step="10" value="0" oninput="updateSfxParam('arp', this.value)" class="w-full">
+                        </div>
+                    </div>
+
+                    <!-- Botones de Acción (Reproducir y Exportar WAV) -->
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <button onclick="playCurrentSfx()" class="flex-1 py-2.5 px-5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-lg shadow-cyan-600/25 transition">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg>
+                            Reproducir SFX
+                        </button>
+
+                        <button onclick="downloadSfxWav()" class="py-2.5 px-6 rounded-xl bg-studio-card hover:bg-slate-800 border border-studio-border hover:border-emerald-500 text-emerald-400 font-semibold text-sm flex items-center justify-center gap-2 transition">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                            Descargar SFX (.WAV)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MINI SECUENCIADOR DE LOOPS CHIPTUNE (8 / 16 PASOS) -->
+            <div class="bg-studio-panel border border-studio-border rounded-xl p-5 shadow-lg">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4 pb-3 border-b border-studio-border">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-0.5 rounded bg-violet-500/20 text-violet-300 font-mono text-[10px] border border-violet-500/30">CHIPTUNE LOOP</span>
+                            <h3 class="text-sm font-bold text-white">Mini Secuenciador Melódico</h3>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-0.5">Haz clic en las celdas para activar notas en la escala seleccionada y exporta el loop en .WAV.</p>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-2.5">
+                        <!-- Selector de Pasos -->
+                        <div class="flex items-center gap-1 bg-studio-card p-1 rounded-lg border border-studio-border text-xs font-mono">
+                            <button onclick="setSeqSteps(8)" id="seq-steps-8" class="px-2.5 py-1 rounded text-slate-400 hover:text-white transition">8 Pasos</button>
+                            <button onclick="setSeqSteps(16)" id="seq-steps-16" class="px-2.5 py-1 rounded bg-violet-600 text-white font-bold transition">16 Pasos</button>
+                        </div>
+
+                        <!-- Selector de Escala -->
+                        <select id="seq-scale" onchange="changeSeqScale(this.value)" class="bg-studio-card border border-studio-border rounded-lg px-2.5 py-1.5 text-xs font-mono text-white focus:outline-none focus:border-cyan-500">
+                            <option value="pentatonic">Escala: Pentatónica</option>
+                            <option value="minor">Escala: Menor (Aventura)</option>
+                            <option value="major">Escala: Mayor (Alegre)</option>
+                            <option value="dorian">Escala: Dórica (Misterio)</option>
+                        </select>
+
+                        <!-- Control BPM -->
+                        <div class="flex items-center gap-2 bg-studio-card border border-studio-border rounded-lg px-3 py-1.5 text-xs">
+                            <span class="text-slate-400 font-mono">BPM:</span>
+                            <input type="number" id="seq-bpm" value="130" min="60" max="220" onchange="updateSeqBPM(this.value)" class="w-12 bg-transparent font-mono font-bold text-cyan-400 focus:outline-none">
+                        </div>
+
+                        <!-- Botones Play/Stop, Aleatorio y WAV -->
+                        <button onclick="toggleSeqPlay()" id="btn-seq-play" class="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 transition shadow-md">
+                            <span id="seq-play-icon">▶</span> <span id="seq-play-text">Loop Play</span>
+                        </button>
+
+                        <button onclick="randomizeSequence()" class="px-3 py-1.5 rounded-lg bg-studio-card hover:bg-slate-800 border border-studio-border text-slate-200 text-xs transition" title="Generar melodía aleatoria">
+                            🎲 Melodía
+                        </button>
+
+                        <button onclick="downloadLoopWav()" class="px-3 py-1.5 rounded-lg bg-studio-card hover:bg-slate-800 border border-emerald-500/40 text-emerald-400 text-xs font-semibold flex items-center gap-1 transition">
+                            <span>⬇</span> Loop .WAV
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Rejilla del Secuenciador -->
+                <div class="overflow-x-auto pb-2">
+                    <div id="sequencer-grid" class="min-w-[640px] flex flex-col gap-1.5">
+                        <!-- Filas de notas generadas dinámicamente -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===================================================================== -->
+        <!-- SECCIÓN 3: GENERADOR DE PALETAS DE COLORES                            -->
+        <!-- ===================================================================== -->
+        <section id="view-palette" class="tab-view hidden flex-col gap-6">
+            <div class="bg-studio-panel border border-studio-border rounded-xl p-5 shadow-lg">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5 pb-4 border-b border-studio-border">
+                    <div>
+                        <h2 class="text-sm font-bold text-white flex items-center gap-2">
+                            <span>🎨</span> Paleta del Proyecto (Sincronizada en Tiempo Real)
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-0.5">Cualquier cambio aquí actualiza automáticamente los colores disponibles en el Editor de Sprites y en el Modo Prueba.</p>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button onclick="generateRandomPalette()" class="px-4 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-400 hover:to-rose-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-lg transition">
+                            <span>✨</span> Generar Armonía Aleatoria
+                        </button>
+                        <button onclick="exportPaletteHex()" class="px-3 py-2 rounded-lg bg-studio-card hover:bg-slate-800 border border-studio-border text-xs text-slate-200 font-mono transition">
+                            📋 Copiar HEX
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tarjetas de Color de la Paleta -->
+                <div id="palette-cards-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 mb-6">
+                    <!-- Generado dinámicamente por JS -->
+                </div>
+
+                <!-- Botones de Temas Predefinidos -->
+                <div>
+                    <h3 class="text-xs font-mono uppercase tracking-wider text-slate-400 mb-2.5">Paletas Curadas para Game Jam</h3>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="loadThemePalette('retro8')" class="px-3 py-1.5 rounded-lg bg-studio-card hover:border-violet-500 border border-studio-border text-xs text-slate-300 transition">🕹️ Retro 8-Bit</button>
+                        <button onclick="loadThemePalette('gameboy')" class="px-3 py-1.5 rounded-lg bg-studio-card hover:border-emerald-500 border border-studio-border text-xs text-slate-300 transition">📟 GameBoy Clásico</button>
+                        <button onclick="loadThemePalette('cyberpunk')" class="px-3 py-1.5 rounded-lg bg-studio-card hover:border-cyan-500 border border-studio-border text-xs text-slate-300 transition">🌃 Cyberpunk Neón</button>
+                        <button onclick="loadThemePalette('forest')" class="px-3 py-1.5 rounded-lg bg-studio-card hover:border-emerald-500 border border-studio-border text-xs text-slate-300 transition">🌲 Fantasía Bosque</button>
+                        <button onclick="loadThemePalette('cozy')" class="px-3 py-1.5 rounded-lg bg-studio-card hover:border-rose-400 border border-studio-border text-xs text-slate-300 transition">🍓 Pastel Indie</button>
+                        <button onclick="loadThemePalette('dungeon')" class="px-3 py-1.5 rounded-lg bg-studio-card hover:border-violet-500 border border-studio-border text-xs text-slate-300 transition">🏰 Dungeon Oscuro</button>
+                        <button onclick="loadThemePalette('sunset')" class="px-3 py-1.5 rounded-lg bg-studio-card hover:border-amber-500 border border-studio-border text-xs text-slate-300 transition">🌅 Atardecer Synthwave</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===================================================================== -->
+        <!-- SECCIÓN 4: GENERADOR DE NARRATIVA, GAME FEEL & MINI-GDD               -->
+        <!-- ===================================================================== -->
+        <section id="view-narrative" class="tab-view hidden grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- Mazo de Cartas de Concepto -->
+            <div class="lg:col-span-7 flex flex-col gap-4">
+                <div class="bg-studio-panel border border-studio-border rounded-xl p-5 shadow-lg">
+                    <div class="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-studio-border">
+                        <div>
+                            <h2 class="text-sm font-bold text-white">Generador de Concepto, Narrativa & Juice</h2>
+                            <p class="text-xs text-slate-400">Bloquea (🔒) las ideas que te gusten y vuelve a tirar el resto.</p>
+                        </div>
+                        <button onclick="generateAllNarrative(false)" class="px-4 py-2 rounded-lg bg-gradient-to-r from-rose-600 to-violet-600 hover:from-rose-500 hover:to-violet-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg transition">
+                            <span>🎲</span> Mezclar Ideas
+                        </button>
+                    </div>
+
+                    <div id="narrative-cards-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <!-- Tarjetas generadas por JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Documento de Diseño Rápido (Mini-GDD) -->
+            <div class="lg:col-span-5 flex flex-col gap-4">
+                <div class="bg-studio-panel border border-studio-border rounded-xl p-5 shadow-lg flex-1 flex flex-col">
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="text-xs font-mono uppercase tracking-wider text-slate-400">Documento GDD Rápido</h2>
+                        <div class="flex items-center gap-2">
+                            <button onclick="copyGddToClipboard()" class="px-2.5 py-1 rounded bg-studio-card hover:bg-slate-800 border border-studio-border text-xs text-slate-300 transition">
+                                📋 Copiar
+                            </button>
+                            <button onclick="downloadGddMarkdown()" class="px-2.5 py-1 rounded bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-xs text-emerald-300 font-medium transition">
+                                ⬇ .MD
+                            </button>
+                        </div>
+                    </div>
+
+                    <input type="text" id="gdd-title-input" value="Proyecto Sin Título (Jam 2026)" oninput="updateGddPreview()" class="w-full bg-studio-bg border border-studio-border rounded-lg px-3 py-2 text-sm font-bold text-white mb-3 focus:outline-none focus:border-violet-500" placeholder="Nombre de tu juego...">
+
+                    <textarea id="gdd-notes-input" rows="3" oninput="updateGddPreview()" class="w-full bg-studio-bg border border-studio-border rounded-lg p-3 text-xs text-slate-300 mb-3 focus:outline-none focus:border-violet-500 resize-none" placeholder="Añade notas extra sobre controles, niveles o jefes finales..."></textarea>
+
+                    <div class="text-[11px] font-mono text-slate-400 mb-1">Vista previa Markdown:</div>
+                    <pre id="gdd-markdown-preview" class="flex-1 bg-studio-bg border border-studio-border rounded-lg p-3 text-[11px] font-mono text-slate-300 whitespace-pre-wrap overflow-y-auto max-h-[260px]"></pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===================================================================== -->
+        <!-- SECCIÓN 5: MODO DE PRUEBA / SANDBOX INTEGRADO                         -->
+        <!-- ===================================================================== -->
+        <section id="view-sandbox" class="tab-view hidden flex-col gap-6">
+            <div class="bg-studio-panel border border-studio-border rounded-xl p-5 shadow-lg">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-mono text-[10px] border border-emerald-500/30">ARENA SANDBOX</span>
+                            <h2 class="text-sm font-bold text-white">Escenario Interactivo & Game Feel</h2>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-1">Mueve tu sprite, salta o dispara con tu SFX actual y experimenta los efectos de <em>Juice</em> en vivo.</p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <!-- Toggles de Game Feel / Juice -->
+                        <label class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-studio-card border border-studio-border text-xs text-slate-300 cursor-pointer">
+                            <input type="checkbox" id="juice-shake" checked class="accent-amber-500">
+                            <span>Screen Shake</span>
+                        </label>
+                        <label class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-studio-card border border-studio-border text-xs text-slate-300 cursor-pointer">
+                            <input type="checkbox" id="juice-particles" checked class="accent-cyan-500">
+                            <span>Partículas</span>
+                        </label>
+                        <label class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-studio-card border border-studio-border text-xs text-slate-300 cursor-pointer">
+                            <input type="checkbox" id="juice-trail" checked class="accent-violet-500">
+                            <span>Estela</span>
+                        </label>
+                        <label class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-studio-card border border-studio-border text-xs text-slate-300 cursor-pointer" title="Usa el frame 1 de tu editor como textura de plataforma">
+                            <input type="checkbox" id="sandbox-use-tile" class="accent-emerald-500">
+                            <span>Tile Suelo</span>
+                        </label>
+                        <button onclick="resetSandboxCoins()" class="px-3 py-1.5 rounded-lg bg-studio-card hover:bg-slate-800 border border-studio-border text-slate-300 text-xs transition">
+                            ↻ Reiniciar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Canvas del Mini Juego Sandbox -->
+                <div class="relative w-full h-[350px] sm:h-[400px] rounded-xl overflow-hidden border-2 border-studio-border bg-studio-bg">
+                    <canvas id="sandbox-canvas" class="w-full h-full block pixelated"></canvas>
+                    
+                    <!-- HUD Superpuesto -->
+                    <div class="absolute top-3 left-3 bg-studio-bg/85 backdrop-blur-sm border border-studio-border rounded-lg px-3 py-1.5 font-mono text-xs text-white flex flex-wrap items-center gap-3">
+                        <span>ÍTEMS: <strong id="sandbox-score" class="text-amber-400">0</strong></span>
+                        <span class="text-slate-500 hidden sm:inline">|</span>
+                        <span class="text-slate-300 hidden sm:inline"><kbd class="px-1.5 py-0.5 bg-studio-card rounded border border-studio-border">A/D</kbd> Mover • <kbd class="px-1.5 py-0.5 bg-studio-card rounded border border-studio-border">Espacio</kbd> Saltar • <kbd class="px-1.5 py-0.5 bg-studio-card rounded border border-studio-border">F / Clic</kbd> Disparar</span>
+                    </div>
+
+                    <!-- Controles Táctiles en Pantalla para Móvil -->
+                    <div class="absolute bottom-3 left-3 right-3 flex justify-between sm:hidden pointer-events-none">
+                        <div class="flex gap-2 pointer-events-auto">
+                            <button id="touch-left" class="w-12 h-12 rounded-xl bg-studio-panel/90 border border-studio-border text-white flex items-center justify-center active:bg-violet-600">◀</button>
+                            <button id="touch-right" class="w-12 h-12 rounded-xl bg-studio-panel/90 border border-studio-border text-white flex items-center justify-center active:bg-violet-600">▶</button>
+                        </div>
+                        <div class="flex gap-2 pointer-events-auto">
+                            <button id="touch-shoot" class="w-12 h-12 rounded-xl bg-rose-600/90 border border-rose-400 text-white font-bold text-xs flex items-center justify-center active:bg-rose-500">⚡</button>
+                            <button id="touch-jump" class="w-14 h-12 rounded-xl bg-cyan-600/90 border border-cyan-400 text-white font-bold text-xs flex items-center justify-center active:bg-cyan-500">SALTO</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer minimalista -->
+    <footer class="border-t border-studio-border bg-studio-panel/60 py-4 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
+            <span>GameJam Studio • Herramienta gratuita de desarrollo rápido 2D</span>
+            <span class="font-mono text-[11px]">100% Client-Side • Exportación PNG, WAV & Markdown</span>
+        </div>
+    </footer>
+
+    <!-- ===================================================================== -->
+    <!-- LÓGICA DE APLICACIÓN COMPLETA (JS)                                    -->
+    <!-- ===================================================================== -->
+    <script>
+        /* ==========================================================================
+           SISTEMA DE NOTIFICACIONES Y NAVEGACIÓN
+           ========================================================================== */
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const colors = {
+                info: 'border-violet-500/50 bg-studio-panel text-white',
+                success: 'border-emerald-500/50 bg-studio-panel text-emerald-300',
+                cyan: 'border-cyan-500/50 bg-studio-panel text-cyan-300',
+                warn: 'border-amber-500/50 bg-studio-panel text-amber-300'
+            };
+
+            toast.className = `px-4 py-2.5 rounded-lg border ${colors[type] || colors.info} shadow-xl text-xs font-medium flex items-center gap-2 transform transition-all duration-300 translate-y-2 opacity-0`;
+            toast.innerHTML = `<span>●</span> <span>${message}</span>`;
+            
+            container.appendChild(toast);
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 2600);
+        }
+
+        function switchTab(tabName) {
+            // Ocultar todas las vistas
+            document.querySelectorAll('.tab-view').forEach(el => {
+                el.classList.add('hidden');
+                el.classList.remove('grid', 'flex');
+            });
+
+            // Resetear botones
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('tab-active');
+            });
+
+            // Mostrar vista seleccionada
+            const targetView = document.getElementById(`view-${tabName}`);
+            if (targetView) {
+                targetView.classList.remove('hidden');
+                if (tabName === 'palette' || tabName === 'sandbox') {
+                    targetView.classList.add('flex');
+                } else {
+                    targetView.classList.add('grid');
+                }
+            }
+
+            const activeBtn = document.getElementById(`tab-btn-${tabName}`);
+            if (activeBtn) activeBtn.classList.add('tab-active');
+
+            // Acciones específicas al entrar a cada pestaña
+            if (tabName === 'sprites') {
+                renderSpritePaletteSwatches();
+                renderSpriteCanvas();
+            } else if (tabName === 'sfx') {
+                drawSfxWaveform();
+                renderSequencerGrid();
+            } else if (tabName === 'sandbox') {
+                initSandbox();
+            }
+        }
+
+        /* ==========================================================================
+           MÓDULO 3: PALETA DE COLORES (COMPARTIDA CON SPRITES Y SANDBOX)
+           ========================================================================== */
+        const THEME_PALETTES = {
+            retro8: ['#1d192b', '#462446', '#b05f6d', '#eb6b56', '#ffc153', '#47b39d'],
+            gameboy: ['#0f380f', '#306230', '#8bac0f', '#9bbc0f', '#cadc9f', '#e0f8d0'],
+            cyberpunk: ['#090a14', '#2b1055', '#ff007f', '#00f0ff', '#ffe600', '#f8fafc'],
+            forest: ['#14211d', '#24473b', '#3f7d58', '#74b473', '#c8e087', '#f4f7be'],
+            cozy: ['#3d314a', '#7c6a8a', '#e5989b', '#ffb4a2', '#ffcdb2', '#fff1e6'],
+            dungeon: ['#121016', '#2a2333', '#524463', '#8c78a6', '#d97736', '#f2d398'],
+            sunset: ['#1d1128', '#591c46', '#a8284b', '#e35336', '#f79e38', '#fce38a']
+        };
+
+        let activePalette = THEME_PALETTES.cyberpunk.map(hex => ({ hex, locked: false }));
+
+        function renderPaletteEditor() {
+            const container = document.getElementById('palette-cards-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            activePalette.forEach((item, idx) => {
+                const roles = ['Fondo / Sombra', 'Plataforma / Base', 'Acento Primario', 'Brillo / Energía', 'Ítems / Luz', 'Contraste Alto'];
+                const card = document.createElement('div');
+                card.className = 'bg-studio-bg border border-studio-border rounded-xl overflow-hidden flex flex-col shadow-md';
+                card.innerHTML = `
+                    <div class="h-24 w-full relative flex items-start justify-end p-2 transition-colors" style="background-color: ${item.hex}">
+                        <button onclick="togglePaletteLock(${idx})" class="w-7 h-7 rounded-lg bg-black/50 backdrop-blur-sm text-white text-xs flex items-center justify-center hover:bg-black/70 transition" title="Bloquear color">
+                            ${item.locked ? '🔒' : '🔓'}
+                        </button>
+                    </div>
+                    <div class="p-3 flex flex-col gap-2">
+                        <div class="text-[10px] font-mono text-slate-400 truncate">${roles[idx] || 'Color ' + (idx + 1)}</div>
+                        <div class="flex items-center justify-between gap-1">
+                            <input type="color" value="${item.hex}" onchange="updatePaletteColor(${idx}, this.value)" class="w-6 h-6 rounded cursor-pointer bg-transparent border-0">
+                            <span class="font-mono text-xs font-bold text-white uppercase">${item.hex}</span>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+            renderSpritePaletteSwatches();
+        }
+
+        function updatePaletteColor(idx, newHex) {
+            activePalette[idx].hex = newHex.toUpperCase();
+            renderPaletteEditor();
+        }
+
+        function togglePaletteLock(idx) {
+            activePalette[idx].locked = !activePalette[idx].locked;
+            renderPaletteEditor();
+        }
+
+        function loadThemePalette(themeKey) {
+            const colors = THEME_PALETTES[themeKey];
+            if (!colors) return;
+            activePalette = colors.map((hex, i) => ({
+                hex: activePalette[i]?.locked ? activePalette[i].hex : hex.toUpperCase(),
+                locked: activePalette[i]?.locked || false
+            }));
+            renderPaletteEditor();
+            showToast(`Paleta "${themeKey}" aplicada`, 'cyan');
+        }
+
+        function hslToHex(h, s, l) {
+            l /= 100;
+            const a = s * Math.min(l, 1 - l) / 100;
+            const f = n => {
+                const k = (n + h / 30) % 12;
+                const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+                return Math.round(255 * color).toString(16).padStart(2, '0');
+            };
+            return `#${f(0)}${f(8)}${f(4)}`.toUpperCase();
+        }
+
+        function generateRandomPalette() {
+            const baseHue = Math.floor(Math.random() * 360);
+            const harmony = [
+                hslToHex(baseHue, 35, 10),
+                hslToHex((baseHue + 20) % 360, 45, 22),
+                hslToHex((baseHue + 150) % 360, 80, 52),
+                hslToHex((baseHue + 190) % 360, 85, 58),
+                hslToHex((baseHue + 45) % 360, 90, 65),
+                hslToHex(baseHue, 25, 92)
+            ];
+
+            activePalette = activePalette.map((item, idx) => ({
+                hex: item.locked ? item.hex : harmony[idx],
+                locked: item.locked
+            }));
+            renderPaletteEditor();
+            showToast('Nueva armonía cromática generada', 'success');
+        }
+
+        function exportPaletteHex() {
+            const hexList = activePalette.map(c => c.hex).join(', ');
+            const tempInput = document.createElement('textarea');
+            tempInput.value = hexList;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+            showToast('Códigos HEX copiados al portapapeles', 'success');
+        }
+
+        /* ==========================================================================
+           MÓDULO 1: EDITOR DE SPRITES (PIXEL ART)
+           ========================================================================== */
+        let gridSize = 16;
+        let frames = []; // Array de matrices 2D [y][x] con strings hex o null
+        let currentFrameIdx = 0;
+        let undoStack = [];
+        let redoStack = [];
+        let activeTool = 'pencil';
+        let activeColor = '#00F0FF';
+        let mirrorHorizontal = false;
+        let mirrorVertical = false;
+        let previewMode = 'anim'; // 'anim' | 'tile'
+        let isDrawing = false;
+        let drawModeErase = false;
+        let isAnimPlaying = true;
+        let animFPS = 6;
+        let animPreviewIdx = 0;
+        let animTimer = null;
+
+        const spriteCanvas = document.getElementById('sprite-canvas');
+        const spriteCtx = spriteCanvas.getContext('2d');
+        const previewCanvas = document.getElementById('preview-canvas');
+        const previewCtx = previewCanvas.getContext('2d');
+
+        function createEmptyGrid(size) {
+            return Array.from({ length: size }, () => Array(size).fill(null));
+        }
+
+        function initSpriteEditor() {
+            frames = [createEmptyGrid(gridSize), createEmptyGrid(gridSize)];
+            // Dibujar un personaje indie inicial simpático de 16x16 en Frame 1 y Frame 2
+            const cBody = '#00F0FF';
+            const cDark = '#2B1055';
+            const cEye = '#FFE600';
+
+            const f0 = frames[0];
+            const f1 = frames[1];
+            for (let y = 4; y <= 12; y++) {
+                for (let x = 5; x <= 10; x++) {
+                    f0[y][x] = cBody;
+                    if (y > 4) f1[y][x] = cBody;
+                }
+            }
+            // Contorno superior y ojos
+            for (let x = 6; x <= 9; x++) { f0[3][x] = cBody; f1[4][x] = cBody; }
+            f0[6][7] = cDark; f0[6][9] = cDark;
+            f0[7][7] = cEye;  f0[7][9] = cEye;
+            f1[7][7] = cDark; f1[7][9] = cDark;
+            f1[8][7] = cEye;  f1[8][9] = cEye;
+            // Patitas animadas
+            f0[13][6] = cBody; f0[13][9] = cBody;
+            f1[13][5] = cBody; f1[13][10] = cBody;
+
+            setActiveColor(activePalette[3].hex);
+            renderSpritePaletteSwatches();
+            renderFramesBar();
+            renderSpriteCanvas();
+            startPreviewLoop();
+            setupSpriteCanvasEvents();
+        }
+
+        function saveUndoState() {
+            const copy = frames[currentFrameIdx].map(row => [...row]);
+            undoStack.push({ frameIdx: currentFrameIdx, grid: copy });
+            if (undoStack.length > 30) undoStack.shift();
+            redoStack = [];
+        }
+
+        function undoSprite() {
+            if (undoStack.length === 0) {
+                showToast('Nada que deshacer', 'warn');
+                return;
+            }
+            const currentCopy = frames[currentFrameIdx].map(row => [...row]);
+            redoStack.push({ frameIdx: currentFrameIdx, grid: currentCopy });
+
+            const last = undoStack.pop();
+            if (last.grid.length === gridSize && frames[last.frameIdx]) {
+                frames[last.frameIdx] = last.grid;
+                currentFrameIdx = last.frameIdx;
+                renderFramesBar();
+                renderSpriteCanvas();
+            }
+        }
+
+        function redoSprite() {
+            if (redoStack.length === 0) {
+                showToast('Nada que rehacer', 'warn');
+                return;
+            }
+            const currentCopy = frames[currentFrameIdx].map(row => [...row]);
+            undoStack.push({ frameIdx: currentFrameIdx, grid: currentCopy });
+
+            const next = redoStack.pop();
+            if (next.grid.length === gridSize && frames[next.frameIdx]) {
+                frames[next.frameIdx] = next.grid;
+                currentFrameIdx = next.frameIdx;
+                renderFramesBar();
+                renderSpriteCanvas();
+            }
+        }
+
+        function changeGridSize(newSize) {
+            if (newSize === gridSize) return;
+            gridSize = newSize;
+            undoStack = [];
+            redoStack = [];
+            frames = [createEmptyGrid(gridSize)];
+            currentFrameIdx = 0;
+
+            document.getElementById('sprite-dim-label').textContent = `${newSize}x${newSize}`;
+            document.querySelectorAll('.grid-size-btn').forEach(btn => {
+                btn.className = 'grid-size-btn py-1.5 px-2 rounded-lg text-xs font-mono border border-studio-border bg-studio-card hover:border-violet-500 transition';
+            });
+            const activeBtn = document.getElementById(`grid-btn-${newSize}`);
+            if (activeBtn) {
+                activeBtn.className = 'grid-size-btn py-1.5 px-2 rounded-lg text-xs font-mono border border-violet-500 bg-violet-600/20 text-white font-bold transition';
+            }
+
+            renderFramesBar();
+            renderSpriteCanvas();
+            showToast(`Lienzo cambiado a ${newSize}x${newSize}`, 'info');
+        }
+
+        function selectTool(tool) {
+            activeTool = tool;
+            document.querySelectorAll('.tool-btn').forEach(btn => {
+                btn.className = 'tool-btn flex items-center gap-2 p-2.5 rounded-lg border border-studio-border bg-studio-card text-slate-300 hover:border-slate-500 text-xs font-medium transition';
+            });
+            const selected = document.getElementById(`tool-${tool}`);
+            if (selected) {
+                selected.className = 'tool-btn flex items-center gap-2 p-2.5 rounded-lg border border-violet-500 bg-violet-600/20 text-white text-xs font-medium transition';
+            }
+        }
+
+        function toggleMirror(axis) {
+            if (axis === 'h') {
+                mirrorHorizontal = !mirrorHorizontal;
+                const badge = document.getElementById('mirror-h-badge');
+                const btn = document.getElementById('btn-mirror-h');
+                badge.textContent = mirrorHorizontal ? 'ON' : 'OFF';
+                badge.className = mirrorHorizontal
+                    ? 'text-[10px] font-mono px-1 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
+                    : 'text-[10px] font-mono px-1 py-0.5 rounded bg-slate-800 text-slate-400';
+                btn.classList.toggle('border-cyan-500', mirrorHorizontal);
+            } else {
+                mirrorVertical = !mirrorVertical;
+                const badge = document.getElementById('mirror-v-badge');
+                const btn = document.getElementById('btn-mirror-v');
+                badge.textContent = mirrorVertical ? 'ON' : 'OFF';
+                badge.className = mirrorVertical
+                    ? 'text-[10px] font-mono px-1 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
+                    : 'text-[10px] font-mono px-1 py-0.5 rounded bg-slate-800 text-slate-400';
+                btn.classList.toggle('border-cyan-500', mirrorVertical);
+            }
+            renderSpriteCanvas();
+        }
+
+        function setPreviewMode(mode) {
+            previewMode = mode;
+            const btnAnim = document.getElementById('prev-mode-anim');
+            const btnTile = document.getElementById('prev-mode-tile');
+            const animBox = document.getElementById('anim-controls-box');
+
+            if (mode === 'anim') {
+                btnAnim.className = 'px-2 py-0.5 rounded bg-violet-600 text-white font-bold transition';
+                btnTile.className = 'px-2 py-0.5 rounded text-slate-400 hover:text-white transition';
+                animBox.classList.remove('opacity-40', 'pointer-events-none');
+            } else {
+                btnTile.className = 'px-2 py-0.5 rounded bg-cyan-600 text-white font-bold transition';
+                btnAnim.className = 'px-2 py-0.5 rounded text-slate-400 hover:text-white transition';
+                animBox.classList.add('opacity-40', 'pointer-events-none');
+            }
+            renderPreviewFrame(animPreviewIdx);
+        }
+
+        function setActiveColor(hex) {
+            activeColor = hex.toUpperCase();
+            document.getElementById('active-color-picker').value = activeColor;
+            document.getElementById('active-color-hex').textContent = activeColor;
+        }
+
+        function renderSpritePaletteSwatches() {
+            const container = document.getElementById('sprite-palette-swatches');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const extraBasics = ['#000000', '#FFFFFF', '#EF4444', '#22C55E', '#3B82F6', '#F59E0B'];
+            const allColors = [...activePalette.map(p => p.hex), ...extraBasics];
+
+            allColors.forEach(hex => {
+                const btn = document.createElement('button');
+                btn.className = 'w-full aspect-square rounded-md border border-white/20 hover:scale-110 transition shadow-sm';
+                btn.style.backgroundColor = hex;
+                btn.title = hex;
+                btn.onclick = () => {
+                    setActiveColor(hex);
+                    if (activeTool === 'eraser') selectTool('pencil');
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        function renderFramesBar() {
+            const container = document.getElementById('frames-container');
+            container.innerHTML = '';
+
+            frames.forEach((_, idx) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'flex items-center';
+
+                const btn = document.createElement('button');
+                const isActive = idx === currentFrameIdx;
+                btn.className = `px-2.5 py-1 rounded-md text-xs font-mono transition flex items-center gap-1.5 ${
+                    isActive
+                        ? 'bg-violet-600 text-white font-bold shadow-md'
+                        : 'bg-studio-card text-slate-400 hover:text-white border border-studio-border'
+                }`;
+                btn.innerHTML = `<span>F${idx + 1}</span>`;
+                btn.onclick = () => {
+                    currentFrameIdx = idx;
+                    renderFramesBar();
+                    renderSpriteCanvas();
+                };
+                wrapper.appendChild(btn);
+
+                if (frames.length > 1 && isActive) {
+                    const delBtn = document.createElement('button');
+                    delBtn.className = 'ml-1 text-[10px] text-rose-400 hover:text-rose-300 px-1';
+                    delBtn.title = 'Eliminar Frame';
+                    delBtn.textContent = '×';
+                    delBtn.onclick = () => deleteCurrentFrame();
+                    wrapper.appendChild(delBtn);
+                }
+
+                container.appendChild(wrapper);
+            });
+
+            document.getElementById('preview-frame-total').textContent = frames.length;
+        }
+
+        function addFrame() {
+            if (frames.length >= 12) {
+                showToast('Máximo 12 frames por animación', 'warn');
+                return;
+            }
+            frames.push(createEmptyGrid(gridSize));
+            currentFrameIdx = frames.length - 1;
+            renderFramesBar();
+            renderSpriteCanvas();
+        }
+
+        function duplicateCurrentFrame() {
+            if (frames.length >= 12) {
+                showToast('Máximo 12 frames por animación', 'warn');
+                return;
+            }
+            const copy = frames[currentFrameIdx].map(row => [...row]);
+            frames.splice(currentFrameIdx + 1, 0, copy);
+            currentFrameIdx++;
+            renderFramesBar();
+            renderSpriteCanvas();
+            showToast('Frame duplicado', 'info');
+        }
+
+        function deleteCurrentFrame() {
+            if (frames.length <= 1) return;
+            frames.splice(currentFrameIdx, 1);
+            currentFrameIdx = Math.max(0, currentFrameIdx - 1);
+            renderFramesBar();
+            renderSpriteCanvas();
+        }
+
+        function clearCurrentFrame() {
+            saveUndoState();
+            frames[currentFrameIdx] = createEmptyGrid(gridSize);
+            renderSpriteCanvas();
+        }
+
+        function floodFill(grid, startX, startY, targetColor, replacementColor) {
+            if (targetColor === replacementColor) return;
+            const stack = [[startX, startY]];
+            while (stack.length > 0) {
+                const [x, y] = stack.pop();
+                if (x < 0 || x >= gridSize || y < 0 || y >= gridSize) continue;
+                if (grid[y][x] !== targetColor) continue;
+                grid[y][x] = replacementColor;
+                stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+            }
+        }
+
+        function applyToolAtCell(x, y, forceErase = false) {
+            if (x < 0 || x >= gridSize || y < 0 || y >= gridSize) return;
+            const grid = frames[currentFrameIdx];
+            const toolToUse = forceErase ? 'eraser' : activeTool;
+
+            if (toolToUse === 'picker') {
+                if (grid[y][x]) {
+                    setActiveColor(grid[y][x]);
+                    selectTool('pencil');
+                    showToast(`Color capturado: ${grid[y][x]}`, 'cyan');
+                }
+                return;
+            }
+
+            if (toolToUse === 'bucket') {
+                floodFill(grid, x, y, grid[y][x], activeColor);
+                renderSpriteCanvas();
+                return;
+            }
+
+            const colorToApply = toolToUse === 'eraser' ? null : activeColor;
+            grid[y][x] = colorToApply;
+
+            const mirrorX = gridSize - 1 - x;
+            const mirrorY = gridSize - 1 - y;
+
+            if (mirrorHorizontal) {
+                grid[y][mirrorX] = colorToApply;
+            }
+            if (mirrorVertical) {
+                grid[mirrorY][x] = colorToApply;
+            }
+            if (mirrorHorizontal && mirrorVertical) {
+                grid[mirrorY][mirrorX] = colorToApply;
+            }
+
+            renderSpriteCanvas();
+        }
+
+        function getCellFromPointerEvent(e) {
+            const rect = spriteCanvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const x = Math.floor(((clientX - rect.left) / rect.width) * gridSize);
+            const y = Math.floor(((clientY - rect.top) / rect.height) * gridSize);
+            return { x, y };
+        }
+
+        function setupSpriteCanvasEvents() {
+            spriteCanvas.addEventListener('contextmenu', e => e.preventDefault());
+
+            const handleStart = (e) => {
+                e.preventDefault();
+                isDrawing = true;
+                drawModeErase = (e.button === 2);
+                if (activeTool !== 'picker') saveUndoState();
+                const { x, y } = getCellFromPointerEvent(e);
+                applyToolAtCell(x, y, drawModeErase);
+            };
+
+            const handleMove = (e) => {
+                if (!isDrawing) return;
+                e.preventDefault();
+                if (activeTool === 'bucket' || activeTool === 'picker') return;
+                const { x, y } = getCellFromPointerEvent(e);
+                applyToolAtCell(x, y, drawModeErase);
+            };
+
+            const handleEnd = () => {
+                isDrawing = false;
+                drawModeErase = false;
+            };
+
+            spriteCanvas.addEventListener('mousedown', handleStart);
+            window.addEventListener('mousemove', handleMove);
+            window.addEventListener('mouseup', handleEnd);
+
+            spriteCanvas.addEventListener('touchstart', handleStart, { passive: false });
+            spriteCanvas.addEventListener('touchmove', handleMove, { passive: false });
+            window.addEventListener('touchend', handleEnd);
+        }
+
+        function renderSpriteCanvas() {
+            const internalSize = 512;
+            spriteCanvas.width = internalSize;
+            spriteCanvas.height = internalSize;
+            const cellSize = internalSize / gridSize;
+
+            spriteCtx.clearRect(0, 0, internalSize, internalSize);
+
+            // Onion skinning (mostrar frame anterior muy tenue si hay > 1 frame y está activo)
+            const onionEnabled = document.getElementById('toggle-onion-skin')?.checked;
+            if (onionEnabled && frames.length > 1 && currentFrameIdx > 0) {
+                const prevGrid = frames[currentFrameIdx - 1];
+                spriteCtx.globalAlpha = 0.22;
+                for (let y = 0; y < gridSize; y++) {
+                    for (let x = 0; x < gridSize; x++) {
+                        if (prevGrid[y][x]) {
+                            spriteCtx.fillStyle = prevGrid[y][x];
+                            spriteCtx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+                        }
+                    }
+                }
+                spriteCtx.globalAlpha = 1.0;
+            }
+
+            // Dibujar píxeles del frame activo
+            const grid = frames[currentFrameIdx];
+            for (let y = 0; y < gridSize; y++) {
+                for (let x = 0; x < gridSize; x++) {
+                    if (grid[y][x]) {
+                        spriteCtx.fillStyle = grid[y][x];
+                        spriteCtx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+                    }
+                }
+            }
+
+            // Cuadrícula guía
+            if (document.getElementById('toggle-grid-lines').checked) {
+                spriteCtx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                spriteCtx.lineWidth = 1;
+                spriteCtx.beginPath();
+                for (let i = 1; i < gridSize; i++) {
+                    const pos = i * cellSize;
+                    spriteCtx.moveTo(pos, 0);
+                    spriteCtx.lineTo(pos, internalSize);
+                    spriteCtx.moveTo(0, pos);
+                    spriteCtx.lineTo(internalSize, pos);
+                }
+                spriteCtx.stroke();
+            }
+
+            // Líneas centrales si espejo está activo
+            if (mirrorHorizontal || mirrorVertical) {
+                spriteCtx.strokeStyle = 'rgba(6, 182, 212, 0.65)';
+                spriteCtx.lineWidth = 2;
+                spriteCtx.setLineDash([6, 4]);
+                if (mirrorHorizontal) {
+                    spriteCtx.beginPath();
+                    spriteCtx.moveTo(internalSize / 2, 0);
+                    spriteCtx.lineTo(internalSize / 2, internalSize);
+                    spriteCtx.stroke();
+                }
+                if (mirrorVertical) {
+                    spriteCtx.beginPath();
+                    spriteCtx.moveTo(0, internalSize / 2);
+                    spriteCtx.lineTo(internalSize, internalSize / 2);
+                    spriteCtx.stroke();
+                }
+                spriteCtx.setLineDash([]);
+            }
+
+            if (previewMode === 'tile') {
+                renderPreviewFrame(currentFrameIdx);
+            }
+        }
+
+        function renderPreviewFrame(frameIdx) {
+            if (previewMode === 'tile') {
+                // Vista previa de mosaico 3x3 sin costuras
+                previewCanvas.width = gridSize * 3;
+                previewCanvas.height = gridSize * 3;
+                previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+
+                const grid = frames[currentFrameIdx] || frames[0];
+                for (let ty = 0; ty < 3; ty++) {
+                    for (let tx = 0; tx < 3; tx++) {
+                        const offX = tx * gridSize;
+                        const offY = ty * gridSize;
+                        for (let y = 0; y < gridSize; y++) {
+                            for (let x = 0; x < gridSize; x++) {
+                                if (grid[y][x]) {
+                                    previewCtx.fillStyle = grid[y][x];
+                                    previewCtx.fillRect(offX + x, offY + y, 1, 1);
+                                }
+                            }
+                        }
+                    }
+                }
+                document.getElementById('preview-badge-info').textContent = 'Mosaico 3x3';
+                return;
+            }
+
+            previewCanvas.width = gridSize;
+            previewCanvas.height = gridSize;
+            previewCtx.clearRect(0, 0, gridSize, gridSize);
+
+            const grid = frames[frameIdx] || frames[0];
+            for (let y = 0; y < gridSize; y++) {
+                for (let x = 0; x < gridSize; x++) {
+                    if (grid[y][x]) {
+                        previewCtx.fillStyle = grid[y][x];
+                        previewCtx.fillRect(x, y, 1, 1);
+                    }
+                }
+            }
+            document.getElementById('preview-badge-info').innerHTML = `Frame <span id="preview-frame-num">${frameIdx + 1}</span>/<span id="preview-frame-total">${frames.length}</span>`;
+        }
+
+        function startPreviewLoop() {
+            if (animTimer) clearInterval(animTimer);
+            animTimer = setInterval(() => {
+                if (previewMode === 'tile') {
+                    renderPreviewFrame(currentFrameIdx);
+                    return;
+                }
+                if (!isAnimPlaying) {
+                    renderPreviewFrame(currentFrameIdx);
+                    return;
+                }
+                animPreviewIdx = (animPreviewIdx + 1) % frames.length;
+                renderPreviewFrame(animPreviewIdx);
+            }, 1000 / animFPS);
+        }
+
+        function toggleAnimation() {
+            isAnimPlaying = !isAnimPlaying;
+            document.getElementById('anim-play-icon').textContent = isAnimPlaying ? '⏸' : '▶';
+            document.getElementById('anim-play-text').textContent = isAnimPlaying ? 'Pausar' : 'Reproducir';
+        }
+
+        function updateFPS(val) {
+            animFPS = parseInt(val);
+            document.getElementById('fps-val').textContent = `${animFPS} FPS`;
+            startPreviewLoop();
+        }
+
+        function exportSpritePNG(asSpritesheet = false) {
+            const scale = parseInt(document.getElementById('export-scale').value) || 8;
+            const exportCanvas = document.createElement('canvas');
+            const ctx = exportCanvas.getContext('2d');
+
+            if (asSpritesheet) {
+                exportCanvas.width = gridSize * frames.length * scale;
+                exportCanvas.height = gridSize * scale;
+
+                frames.forEach((grid, fIdx) => {
+                    const offsetX = fIdx * gridSize * scale;
+                    for (let y = 0; y < gridSize; y++) {
+                        for (let x = 0; x < gridSize; x++) {
+                            if (grid[y][x]) {
+                                ctx.fillStyle = grid[y][x];
+                                ctx.fillRect(offsetX + x * scale, y * scale, scale, scale);
+                            }
+                        }
+                    }
+                });
+            } else {
+                exportCanvas.width = gridSize * scale;
+                exportCanvas.height = gridSize * scale;
+                const grid = frames[currentFrameIdx];
+                for (let y = 0; y < gridSize; y++) {
+                    for (let x = 0; x < gridSize; x++) {
+                        if (grid[y][x]) {
+                            ctx.fillStyle = grid[y][x];
+                            ctx.fillRect(x * scale, y * scale, scale, scale);
+                        }
+                    }
+                }
+            }
+
+            const link = document.createElement('a');
+            link.download = asSpritesheet
+                ? `spritesheet_${gridSize}x${gridSize}_${frames.length}f.png`
+                : `sprite_${gridSize}x${gridSize}_f${currentFrameIdx + 1}.png`;
+            link.href = exportCanvas.toDataURL('image/png');
+            link.click();
+            showToast(asSpritesheet ? 'Spritesheet PNG descargada' : 'Frame PNG descargado', 'success');
+        }
+
+        /* ==========================================================================
+           MÓDULO 2: SINTETIZADOR DE EFECTOS DE SONIDO (WEB AUDIO API + EXPORT WAV)
+           ========================================================================== */
+        let audioCtx = null;
+        let sfxParams = {
+            wave: 'square',
+            freq: 320,
+            slide: 450,
+            duration: 0.25,
+            attack: 0.01,
+            decay: 0.22,
+            arp: 0
+        };
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContextClass();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        function setWaveType(wave) {
+            sfxParams.wave = wave;
+            document.querySelectorAll('.wave-btn').forEach(btn => {
+                btn.className = 'wave-btn py-2 px-3 rounded-lg border border-studio-border bg-studio-card text-slate-300 text-xs font-mono transition';
+            });
+            const active = document.getElementById(`wave-${wave}`);
+            if (active) {
+                active.className = 'wave-btn py-2 px-3 rounded-lg border border-cyan-500 bg-cyan-500/20 text-white text-xs font-mono font-bold transition';
+            }
+            drawSfxWaveform();
+        }
+
+        function updateSfxParam(param, value) {
+            sfxParams[param] = parseFloat(value);
+            syncSfxUI();
+            drawSfxWaveform();
+        }
+
+        function syncSfxUI() {
+            setWaveType(sfxParams.wave);
+            document.getElementById('sfx-freq').value = sfxParams.freq;
+            document.getElementById('val-freq').textContent = `${Math.round(sfxParams.freq)} Hz`;
+
+            document.getElementById('sfx-slide').value = sfxParams.slide;
+            const sign = sfxParams.slide >= 0 ? '+' : '';
+            document.getElementById('val-slide').textContent = `${sign}${Math.round(sfxParams.slide)} Hz`;
+
+            document.getElementById('sfx-duration').value = sfxParams.duration;
+            document.getElementById('val-duration').textContent = `${sfxParams.duration.toFixed(2)} s`;
+            document.getElementById('sfx-duration-badge').textContent = `${sfxParams.duration.toFixed(2)}s`;
+
+            document.getElementById('sfx-attack').value = sfxParams.attack;
+            document.getElementById('val-attack').textContent = `${sfxParams.attack.toFixed(2)} s`;
+
+            document.getElementById('sfx-decay').value = sfxParams.decay;
+            document.getElementById('val-decay').textContent = `${sfxParams.decay.toFixed(2)} s`;
+
+            document.getElementById('sfx-arp').value = sfxParams.arp;
+            document.getElementById('val-arp').textContent = `${Math.round(sfxParams.arp)} Hz`;
+        }
+
+        function applySfxPreset(preset) {
+            const rand = (min, max) => Math.random() * (max - min) + min;
+            switch (preset) {
+                case 'jump':
+                    sfxParams = {
+                        wave: 'square',
+                        freq: rand(220, 340),
+                        slide: rand(350, 580),
+                        duration: rand(0.20, 0.32),
+                        attack: 0.01,
+                        decay: 0.24,
+                        arp: 0
+                    };
+                    break;
+                case 'coin':
+                    sfxParams = {
+                        wave: 'square',
+                        freq: rand(780, 980),
+                        slide: 0,
+                        duration: 0.35,
+                        attack: 0.005,
+                        decay: 0.30,
+                        arp: rand(320, 480)
+                    };
+                    break;
+                case 'laser':
+                    sfxParams = {
+                        wave: 'sawtooth',
+                        freq: rand(950, 1450),
+                        slide: rand(-1100, -750),
+                        duration: rand(0.15, 0.26),
+                        attack: 0.005,
+                        decay: 0.18,
+                        arp: 0
+                    };
+                    break;
+                case 'explosion':
+                    sfxParams = {
+                        wave: 'noise',
+                        freq: rand(120, 260),
+                        slide: rand(-180, -80),
+                        duration: rand(0.45, 0.80),
+                        attack: 0.01,
+                        decay: 0.55,
+                        arp: 0
+                    };
+                    break;
+                case 'powerup':
+                    sfxParams = {
+                        wave: 'triangle',
+                        freq: rand(330, 480),
+                        slide: rand(420, 700),
+                        duration: 0.50,
+                        attack: 0.02,
+                        decay: 0.45,
+                        arp: rand(240, 420)
+                    };
+                    break;
+                case 'hit':
+                    sfxParams = {
+                        wave: 'sawtooth',
+                        freq: rand(160, 260),
+                        slide: rand(-180, -100),
+                        duration: rand(0.12, 0.22),
+                        attack: 0.005,
+                        decay: 0.15,
+                        arp: 0
+                    };
+                    break;
+                case 'footstep':
+                    sfxParams = {
+                        wave: 'noise',
+                        freq: rand(260, 420),
+                        slide: rand(-180, -90),
+                        duration: rand(0.05, 0.09),
+                        attack: 0.005,
+                        decay: 0.06,
+                        arp: 0
+                    };
+                    break;
+                case 'reload':
+                    sfxParams = {
+                        wave: 'square',
+                        freq: rand(380, 520),
+                        slide: 120,
+                        duration: 0.22,
+                        attack: 0.005,
+                        decay: 0.18,
+                        arp: 260
+                    };
+                    break;
+                case 'ui':
+                    sfxParams = {
+                        wave: 'triangle',
+                        freq: rand(660, 880),
+                        slide: 150,
+                        duration: 0.08,
+                        attack: 0.005,
+                        decay: 0.06,
+                        arp: 0
+                    };
+                    break;
+                case 'random':
+                    const waves = ['square', 'triangle', 'sawtooth', 'sine', 'noise'];
+                    sfxParams = {
+                        wave: waves[Math.floor(Math.random() * waves.length)],
+                        freq: rand(120, 1200),
+                        slide: rand(-800, 800),
+                        duration: rand(0.12, 0.65),
+                        attack: rand(0.005, 0.08),
+                        decay: rand(0.10, 0.50),
+                        arp: Math.random() > 0.5 ? rand(150, 500) : 0
+                    };
+                    break;
+            }
+            syncSfxUI();
+            drawSfxWaveform();
+            playCurrentSfx();
+        }
+
+        function playCurrentSfx() {
+            try {
+                const ctx = getAudioContext();
+                const now = ctx.currentTime;
+                const dur = sfxParams.duration;
+                const gainNode = ctx.createGain();
+
+                // Envolvente ADSR simplificada
+                gainNode.gain.setValueAtTime(0.001, now);
+                gainNode.gain.linearRampToValueAtTime(0.32, now + Math.min(sfxParams.attack, dur * 0.4));
+                gainNode.gain.exponentialRampToValueAtTime(0.001, now + dur);
+
+                gainNode.connect(ctx.destination);
+
+                if (sfxParams.wave === 'noise') {
+                    const bufferSize = Math.floor(ctx.sampleRate * dur);
+                    const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+                    const data = noiseBuffer.getChannelData(0);
+                    let lastOut = 0;
+                    const stepSize = Math.max(1, Math.floor(1400 / sfxParams.freq));
+                    for (let i = 0; i < bufferSize; i++) {
+                        if (i % stepSize === 0) {
+                            lastOut = Math.random() * 2 - 1;
+                        }
+                        data[i] = lastOut;
+                    }
+                    const noiseSource = ctx.createBufferSource();
+                    noiseSource.buffer = noiseBuffer;
+                    noiseSource.connect(gainNode);
+                    noiseSource.start(now);
+                    noiseSource.stop(now + dur);
+                } else {
+                    const osc = ctx.createOscillator();
+                    osc.type = sfxParams.wave;
+                    const startF = Math.max(20, sfxParams.freq);
+                    const endF = Math.max(20, sfxParams.freq + sfxParams.slide);
+
+                    osc.frequency.setValueAtTime(startF, now);
+                    if (sfxParams.arp > 0) {
+                        const midTime = now + dur * 0.35;
+                        osc.frequency.setValueAtTime(startF + sfxParams.arp, midTime);
+                        osc.frequency.linearRampToValueAtTime(endF + sfxParams.arp, now + dur);
+                    } else {
+                        osc.frequency.exponentialRampToValueAtTime(endF, now + dur);
+                    }
+
+                    osc.connect(gainNode);
+                    osc.start(now);
+                    osc.stop(now + dur);
+                }
+            } catch (err) {
+                console.warn('Audio bloqueado hasta interacción:', err);
+            }
+        }
+
+        function drawSfxWaveform() {
+            const canvas = document.getElementById('sfx-visualizer');
+            if (!canvas) return;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width || 600;
+            canvas.height = rect.height || 96;
+            const ctx = canvas.getContext('2d');
+
+            const w = canvas.width;
+            const h = canvas.height;
+            ctx.clearRect(0, 0, w, h);
+
+            // Línea central
+            ctx.strokeStyle = 'rgba(6, 182, 212, 0.15)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(0, h / 2);
+            ctx.lineTo(w, h / 2);
+            ctx.stroke();
+
+            // Dibujar forma de onda modulada por envolvente
+            ctx.strokeStyle = '#06b6d4';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+
+            const cycles = Math.max(4, Math.min(35, sfxParams.freq / 35));
+            for (let x = 0; x < w; x++) {
+                const t = x / w;
+                // Envolvente visual
+                const atkRatio = Math.min(0.4, sfxParams.attack / sfxParams.duration);
+                let env = t < atkRatio ? (t / atkRatio) : Math.pow(1 - ((t - atkRatio) / (1 - atkRatio)), 1.6);
+
+                const slideFactor = 1 + (sfxParams.slide / 1000) * t;
+                const phase = t * cycles * slideFactor * Math.PI * 2;
+                let sample = 0;
+
+                switch (sfxParams.wave) {
+                    case 'square': sample = Math.sin(phase) >= 0 ? 0.85 : -0.85; break;
+                    case 'triangle': sample = (2 / Math.PI) * Math.asin(Math.sin(phase)); break;
+                    case 'sawtooth': sample = 2 * ((phase / (2 * Math.PI)) - Math.floor(0.5 + phase / (2 * Math.PI))); break;
+                    case 'sine': sample = Math.sin(phase); break;
+                    case 'noise': sample = (Math.sin(x * 12.9898) * 43758.5453 % 1) * 2 - 1; break;
+                }
+
+                const y = (h / 2) - sample * env * (h * 0.4);
+                if (x === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+        }
+
+        function downloadSfxWav() {
+            const sampleRate = 44100;
+            const numSamples = Math.floor(sampleRate * sfxParams.duration);
+            const samples = new Float32Array(numSamples);
+
+            let phase = 0;
+            let lastNoise = 0;
+            const noiseStep = Math.max(1, Math.floor(1400 / sfxParams.freq));
+
+            for (let i = 0; i < numSamples; i++) {
+                const t = i / sampleRate;
+                const progress = t / sfxParams.duration;
+
+                // Envolvente de amplitud
+                let env = 1;
+                if (t < sfxParams.attack) {
+                    env = t / Math.max(0.001, sfxParams.attack);
+                } else {
+                    env = Math.pow(1 - ((t - sfxParams.attack) / Math.max(0.001, sfxParams.duration - sfxParams.attack)), 1.8);
+                }
+
+                let freq = Math.max(20, sfxParams.freq + sfxParams.slide * progress);
+                if (sfxParams.arp > 0 && progress >= 0.35) {
+                    freq += sfxParams.arp;
+                }
+
+                phase += (2 * Math.PI * freq) / sampleRate;
+                let raw = 0;
+
+                switch (sfxParams.wave) {
+                    case 'square': raw = Math.sin(phase) >= 0 ? 0.7 : -0.7; break;
+                    case 'triangle': raw = (2 / Math.PI) * Math.asin(Math.sin(phase)); break;
+                    case 'sawtooth': raw = 2 * ((phase / (2 * Math.PI)) % 1) - 1; break;
+                    case 'sine': raw = Math.sin(phase); break;
+                    case 'noise':
+                        if (i % noiseStep === 0) lastNoise = Math.random() * 2 - 1;
+                        raw = lastNoise;
+                        break;
+                }
+                samples[i] = raw * env * 0.45;
+            }
+
+            // Codificar cabecera RIFF WAV PCM 16-bit mono
+            const buffer = new ArrayBuffer(44 + samples.length * 2);
+            const view = new DataView(buffer);
+
+            const writeString = (offset, str) => {
+                for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+            };
+
+            writeString(0, 'RIFF');
+            view.setUint32(4, 36 + samples.length * 2, true);
+            writeString(8, 'WAVE');
+            writeString(12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true); // PCM
+            view.setUint16(22, 1, true); // Mono
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * 2, true);
+            view.setUint16(32, 2, true);
+            view.setUint16(34, 16, true);
+            writeString(36, 'data');
+            view.setUint32(40, samples.length * 2, true);
+
+            let offset = 44;
+            for (let i = 0; i < samples.length; i++, offset += 2) {
+                const s = Math.max(-1, Math.min(1, samples[i]));
+                view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+            }
+
+            const blob = new Blob([buffer], { type: 'audio/wav' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `sfx_${sfxParams.wave}_${Math.round(sfxParams.freq)}hz.wav`;
+            link.click();
+            URL.revokeObjectURL(url);
+            showToast('Archivo de audio .WAV descargado', 'success');
+        }
+
+        /* ==========================================================================
+           MINI SECUENCIADOR DE LOOPS CHIPTUNE (8 / 16 PASOS)
+           ========================================================================== */
+        const SCALES_DB = {
+            pentatonic: [
+                { name: 'C5', freq: 523.25 },
+                { name: 'A4', freq: 440.00 },
+                { name: 'G4', freq: 392.00 },
+                { name: 'E4', freq: 329.63 },
+                { name: 'D4', freq: 293.66 },
+                { name: 'C4', freq: 261.63 }
+            ],
+            minor: [
+                { name: 'G4', freq: 392.00 },
+                { name: 'Eb4', freq: 311.13 },
+                { name: 'D4', freq: 293.66 },
+                { name: 'C4', freq: 261.63 },
+                { name: 'Bb3', freq: 233.08 },
+                { name: 'G3', freq: 196.00 }
+            ],
+            major: [
+                { name: 'G4', freq: 392.00 },
+                { name: 'E4', freq: 329.63 },
+                { name: 'D4', freq: 293.66 },
+                { name: 'C4', freq: 261.63 },
+                { name: 'B3', freq: 246.94 },
+                { name: 'G3', freq: 196.00 }
+            ],
+            dorian: [
+                { name: 'A4', freq: 440.00 },
+                { name: 'G4', freq: 392.00 },
+                { name: 'F#4', freq: 369.99 },
+                { name: 'E4', freq: 329.63 },
+                { name: 'D4', freq: 293.66 },
+                { name: 'A3', freq: 220.00 }
+            ]
+        };
+
+        let seqSteps = 16;
+        let seqScale = 'pentatonic';
+        let seqBPM = 130;
+        let seqPattern = []; // [noteIdx][stepIdx] boolean
+        let isSeqPlaying = false;
+        let seqCurrentStep = 0;
+        let seqTimer = null;
+
+        function initSequencerPattern() {
+            const notes = SCALES_DB[seqScale];
+            seqPattern = Array.from({ length: notes.length }, () => Array(seqSteps).fill(false));
+            // Melodía inicial agradable
+            const defaultNotes = [5, 3, 2, 1, 0, 1, 2, 3, 5, 4, 3, 2, 3, 4, 5, 5];
+            for (let s = 0; s < seqSteps; s++) {
+                const nIdx = defaultNotes[s % defaultNotes.length] % notes.length;
+                if (s % 2 === 0 || s === 13) {
+                    seqPattern[nIdx][s] = true;
+                }
+            }
+            renderSequencerGrid();
+        }
+
+        function setSeqSteps(steps) {
+            seqSteps = steps;
+            document.getElementById('seq-steps-8').className = steps === 8
+                ? 'px-2.5 py-1 rounded bg-violet-600 text-white font-bold transition'
+                : 'px-2.5 py-1 rounded text-slate-400 hover:text-white transition';
+            document.getElementById('seq-steps-16').className = steps === 16
+                ? 'px-2.5 py-1 rounded bg-violet-600 text-white font-bold transition'
+                : 'px-2.5 py-1 rounded text-slate-400 hover:text-white transition';
+            initSequencerPattern();
+        }
+
+        function changeSeqScale(scale) {
+            seqScale = scale;
+            initSequencerPattern();
+        }
+
+        function updateSeqBPM(val) {
+            const parsed = parseInt(val, 10);
+            if (!isNaN(parsed) && parsed >= 60 && parsed <= 220) {
+                seqBPM = parsed;
+                if (isSeqPlaying) {
+                    stopSequencerLoop();
+                    startSequencerLoop();
+                }
+            }
+        }
+
+        function toggleSeqCell(noteIdx, stepIdx) {
+            if (!seqPattern[noteIdx]) return;
+            seqPattern[noteIdx][stepIdx] = !seqPattern[noteIdx][stepIdx];
+            renderSequencerGrid();
+            if (seqPattern[noteIdx][stepIdx]) {
+                playNoteFrequency(SCALES_DB[seqScale][noteIdx].freq, 0.14);
+            }
+        }
+
+        function randomizeSequence() {
+            const notes = SCALES_DB[seqScale];
+            seqPattern = Array.from({ length: notes.length }, () => Array(seqSteps).fill(false));
+            for (let s = 0; s < seqSteps; s++) {
+                if (Math.random() < 0.72) {
+                    const randNote = Math.floor(Math.random() * notes.length);
+                    seqPattern[randNote][s] = true;
+                }
+            }
+            renderSequencerGrid();
+            showToast('Melodía chiptune generada', 'cyan');
+        }
+
+        function renderSequencerGrid() {
+            const container = document.getElementById('sequencer-grid');
+            if (!container) return;
+            const notes = SCALES_DB[seqScale];
+            container.innerHTML = '';
+
+            notes.forEach((note, nIdx) => {
+                const row = document.createElement('div');
+                row.className = 'flex items-center gap-1.5';
+
+                const label = document.createElement('div');
+                label.className = 'w-11 text-[11px] font-mono font-bold text-slate-400 shrink-0';
+                label.textContent = note.name;
+                row.appendChild(label);
+
+                const cellsWrapper = document.createElement('div');
+                cellsWrapper.className = `flex-1 grid gap-1`;
+                cellsWrapper.style.gridTemplateColumns = `repeat(${seqSteps}, minmax(0, 1fr))`;
+
+                for (let s = 0; s < seqSteps; s++) {
+                    const active = seqPattern[nIdx]?.[s] || false;
+                    const isPlayhead = isSeqPlaying && seqCurrentStep === s;
+                    const cell = document.createElement('button');
+                    cell.type = 'button';
+                    cell.className = `h-7 rounded transition border ${
+                        active
+                            ? 'bg-cyan-500 border-cyan-300 shadow-sm shadow-cyan-500/40'
+                            : 'bg-studio-card border-studio-border hover:border-slate-500'
+                    } ${isPlayhead ? 'ring-2 ring-amber-400' : ''}`;
+                    cell.title = `${note.name} • Paso ${s + 1}`;
+                    cell.onclick = () => toggleSeqCell(nIdx, s);
+                    cellsWrapper.appendChild(cell);
+                }
+
+                row.appendChild(cellsWrapper);
+                container.appendChild(row);
+            });
+        }
+
+        function playNoteFrequency(freq, duration = 0.15) {
+            try {
+                const ctx = getAudioContext();
+                const now = ctx.currentTime;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = sfxParams.wave === 'noise' ? 'square' : sfxParams.wave;
+                osc.frequency.setValueAtTime(freq, now);
+                gain.gain.setValueAtTime(0.18, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now);
+                osc.stop(now + duration);
+            } catch (err) {
+                console.warn('Error reproduciendo nota:', err);
+            }
+        }
+
+        function startSequencerLoop() {
+            const stepMs = (60 / seqBPM / 4) * 1000; // Semicorcheas
+            const notes = SCALES_DB[seqScale];
+            seqCurrentStep = 0;
+
+            seqTimer = setInterval(() => {
+                for (let n = 0; n < notes.length; n++) {
+                    if (seqPattern[n]?.[seqCurrentStep]) {
+                        playNoteFrequency(notes[n].freq, (stepMs / 1000) * 0.9);
+                    }
+                }
+                renderSequencerGrid();
+                seqCurrentStep = (seqCurrentStep + 1) % seqSteps;
+            }, stepMs);
+        }
+
+        function stopSequencerLoop() {
+            if (seqTimer) {
+                clearInterval(seqTimer);
+                seqTimer = null;
+            }
+            seqCurrentStep = 0;
+            renderSequencerGrid();
+        }
+
+        function toggleSeqPlay() {
+            isSeqPlaying = !isSeqPlaying;
+            const icon = document.getElementById('seq-play-icon');
+            const text = document.getElementById('seq-play-text');
+            if (isSeqPlaying) {
+                icon.textContent = '⏹';
+                text.textContent = 'Detener';
+                startSequencerLoop();
+            } else {
+                stopSequencerLoop();
+                icon.textContent = '▶';
+                text.textContent = 'Loop Play';
+            }
+        }
+
+        function downloadLoopWav() {
+            const sampleRate = 44100;
+            const stepDuration = 60 / seqBPM / 4;
+            const totalDuration = stepDuration * seqSteps;
+            const numSamples = Math.floor(sampleRate * totalDuration);
+            const samples = new Float32Array(numSamples);
+            const notes = SCALES_DB[seqScale];
+
+            for (let s = 0; s < seqSteps; s++) {
+                const startSample = Math.floor(s * stepDuration * sampleRate);
+                const endSample = Math.min(numSamples, Math.floor((s + 1) * stepDuration * sampleRate));
+
+                for (let n = 0; n < notes.length; n++) {
+                    if (!seqPattern[n]?.[s]) continue;
+                    const freq = notes[n].freq;
+                    let phase = 0;
+                    for (let i = startSample; i < endSample; i++) {
+                        const localT = (i - startSample) / Math.max(1, endSample - startSample);
+                        const env = Math.pow(1 - localT, 1.4) * 0.22;
+                        phase += (2 * Math.PI * freq) / sampleRate;
+                        const waveSample = sfxParams.wave === 'triangle'
+                            ? (2 / Math.PI) * Math.asin(Math.sin(phase))
+                            : (Math.sin(phase) >= 0 ? 1 : -1);
+                        samples[i] += waveSample * env;
+                    }
+                }
+            }
+
+            const buffer = new ArrayBuffer(44 + samples.length * 2);
+            const view = new DataView(buffer);
+            const writeString = (offset, str) => {
+                for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+            };
+
+            writeString(0, 'RIFF');
+            view.setUint32(4, 36 + samples.length * 2, true);
+            writeString(8, 'WAVE');
+            writeString(12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, 1, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * 2, true);
+            view.setUint16(32, 2, true);
+            view.setUint16(34, 16, true);
+            writeString(36, 'data');
+            view.setUint32(40, samples.length * 2, true);
+
+            let offset = 44;
+            for (let i = 0; i < samples.length; i++, offset += 2) {
+                const s = Math.max(-1, Math.min(1, samples[i]));
+                view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+            }
+
+            const blob = new Blob([buffer], { type: 'audio/wav' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `chiptune_loop_${seqBPM}bpm_${seqSteps}steps.wav`;
+            link.click();
+            URL.revokeObjectURL(url);
+            showToast('Loop chiptune (.WAV) descargado', 'success');
+        }
+
+        /* ==========================================================================
+           MÓDULO 4: GENERADOR DE NARRATIVA, GAME FEEL & MINI-GDD
+           ========================================================================== */
+        const NARRATIVE_DB = {
+            genre: [
+                'Plataformas de precisión con dash aéreo',
+                'Puzzle-aventura en habitaciones cerradas',
+                'Twin-stick shooter arcade de oleadas rápidas',
+                'Metroidvania compacto en un único edificio',
+                'Roguelike de turnos con cartas y reliquias',
+                'Sigilo minimalista con luces y sombras'
+            ],
+            mechanic: [
+                'Cada salto deja un clon estático que sirve de plataforma durante 4 segundos',
+                'El tiempo solo avanza cuando te mueves o disparas (estilo super-ritmo)',
+                'Puedes intercambiar posiciones con cualquier proyectil o enemigo marcado',
+                'Tu barra de vida también es tu munición o impulso principal',
+                'Alternar entre dos dimensiones cambia qué paredes son sólidas'
+            ],
+            setting: [
+                'Un faro suspendido sobre un mar de nubes eléctricas tras el apagón',
+                'El interior biológico de un reloj gigante que está perdiendo el ritmo',
+                'Una estación orbital abandonada donde los ecos toman forma física',
+                'Un bosque de cristal donde cada sonido resuena y atrae criaturas',
+                'Los tejados infinitos de una ciudad lluviosa iluminada por neones'
+            ],
+            protagonist: [
+                'Un mensajero autómata con batería inestable intentando entregar una última carta',
+                'Una botánica diminuta defendiendo el último brote luminoso del invernadero',
+                'Un fantasma archivista que debe recuperar sus recuerdos antes del amanecer',
+                'Un aprendiz de herrero armado con un martillo gravitatorio'
+            ],
+            visualStyle: [
+                'Pixel art de alto contraste con siluetas marcadas y niebla atmosférica',
+                'Estética monocromática con un único color de acento para elementos interactivos',
+                'Sprites retro de 16x16 con iluminación dinámica suave y partículas crisp',
+                'Estilo cómic de tinta gruesa con fondos en parallax de tres capas'
+            ],
+            gameFeel: [
+                'Hit-stop de 50ms al golpear + screen shake direccional + partículas al aterrizar',
+                'Coyote time de 120ms + jump buffering + squash & stretch exagerado en el sprite',
+                'Estela de color al esprintar + cámara que adelanta ligeramente en la dirección del movimiento',
+                'Retroceso (knockback) al disparar + destello blanco rápido en enemigos al recibir daño'
+            ],
+            constraint: [
+                'Solo se puede usar un botón de acción además de moverse',
+                'Todo el juego ocurre en una sola pantalla que muta entre fases',
+                'No hay texto explicativo: todo se enseña con el diseño del nivel',
+                'Cada partida dura máximo 90 segundos'
+            ]
+        };
+
+        let narrativeState = [
+            { key: 'genre', label: 'Género Base', icon: '🎮', value: '', locked: false },
+            { key: 'mechanic', label: 'Mecánica Principal / Twist', icon: '⚙️', value: '', locked: false },
+            { key: 'setting', label: 'Escenario / Gancho Narrativo', icon: '🌍', value: '', locked: false },
+            { key: 'protagonist', label: 'Protagonista & Conflicto', icon: '🧙', value: '', locked: false },
+            { key: 'visualStyle', label: 'Estilo Visual & Dirección de Arte', icon: '🎨', value: '', locked: false },
+            { key: 'gameFeel', label: 'Receta de Game Feel / Juice', icon: '✨', value: '', locked: false },
+            { key: 'constraint', label: 'Restricción Game Jam', icon: '⏱️', value: '', locked: false }
+        ];
+
+        function pickRandomFrom(arr, exclude) {
+            const filtered = arr.filter(item => item !== exclude);
+            return filtered[Math.floor(Math.random() * filtered.length)] || arr[0];
+        }
+
+        function generateAllNarrative(silent = false) {
+            narrativeState.forEach(card => {
+                if (!card.locked) {
+                    card.value = pickRandomFrom(NARRATIVE_DB[card.key], card.value);
+                }
+            });
+            renderNarrativeCards();
+            updateGddPreview();
+            if (!silent) showToast('Nuevas ideas de diseño generadas', 'info');
+        }
+
+        function rerollSingleCard(idx) {
+            const card = narrativeState[idx];
+            if (card.locked) return;
+            card.value = pickRandomFrom(NARRATIVE_DB[card.key], card.value);
+            renderNarrativeCards();
+            updateGddPreview();
+        }
+
+        function toggleNarrativeLock(idx) {
+            narrativeState[idx].locked = !narrativeState[idx].locked;
+            renderNarrativeCards();
+        }
+
+        function renderNarrativeCards() {
+            const grid = document.getElementById('narrative-cards-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+
+            narrativeState.forEach((card, idx) => {
+                const el = document.createElement('div');
+                el.className = `p-4 rounded-xl border transition flex flex-col justify-between gap-3 ${
+                    card.locked
+                        ? 'bg-violet-950/20 border-violet-500/60'
+                        : 'bg-studio-bg border-studio-border hover:border-slate-600'
+                }`;
+                el.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-mono uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                            <span>${card.icon}</span> ${card.label}
+                        </span>
+                        <div class="flex items-center gap-1">
+                            <button onclick="rerollSingleCard(${idx})" class="p-1 rounded hover:bg-studio-card text-xs text-slate-400 hover:text-cyan-400 transition" title="Cambiar solo esta tarjeta">
+                                ↻
+                            </button>
+                            <button onclick="toggleNarrativeLock(${idx})" class="p-1 rounded hover:bg-studio-card text-xs transition" title="Bloquear tarjeta">
+                                ${card.locked ? '🔒' : '🔓'}
+                            </button>
+                        </div>
+                    </div>
+                    <p class="text-xs sm:text-sm font-medium text-slate-100 leading-relaxed">${card.value}</p>
+                `;
+                grid.appendChild(el);
+            });
+        }
+
+        function buildGddMarkdown() {
+            const title = document.getElementById('gdd-title-input')?.value || 'Proyecto Game Jam';
+            const notes = document.getElementById('gdd-notes-input')?.value.trim();
+            const paletteHex = activePalette.map(c => c.hex).join(' | ');
+
+            let md = `# 🎮 ${title}\n`;
+            md += `> Documento de Diseño Rápido (Mini-GDD) — Generado con GameJam Studio\n\n`;
+            md += `## 🧠 Concepto y Narrativa\n`;
+            narrativeState.forEach(c => {
+                md += `- **${c.label}:** ${c.value}\n`;
+            });
+            md += `\n## 🎨 Dirección de Arte\n`;
+            md += `- **Resolución de Sprites:** ${gridSize}x${gridSize} px (${frames.length} frames)\n`;
+            md += `- **Paleta de Colores:** \`${paletteHex}\`\n`;
+            md += `\n## 🔊 Audio & SFX\n`;
+            md += `- **Onda Principal:** ${sfxParams.wave.toUpperCase()} (${Math.round(sfxParams.freq)} Hz, ${sfxParams.duration.toFixed(2)}s)\n`;
+            md += `- **Loop Musical:** Escala ${seqScale.toUpperCase()} a ${seqBPM} BPM (${seqSteps} pasos)\n`;
+
+            if (notes) {
+                md += `\n## 📝 Notas Adicionales\n${notes}\n`;
+            }
+            return md;
+        }
+
+        function updateGddPreview() {
+            const preview = document.getElementById('gdd-markdown-preview');
+            if (preview) preview.textContent = buildGddMarkdown();
+        }
+
+        function copyGddToClipboard() {
+            const md = buildGddMarkdown();
+            const temp = document.createElement('textarea');
+            temp.value = md;
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand('copy');
+            document.body.removeChild(temp);
+            showToast('Mini-GDD copiado al portapapeles', 'success');
+        }
+
+        function downloadGddMarkdown() {
+            const md = buildGddMarkdown();
+            const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'mini_gdd_gamejam.md';
+            link.click();
+            URL.revokeObjectURL(url);
+            showToast('Archivo GDD (.MD) descargado', 'success');
+        }
+
+        /* ==========================================================================
+           MÓDULO 5: MODO DE PRUEBA / SANDBOX INTEGRADO
+           ========================================================================== */
+        let sandboxRunning = false;
+        let sandboxKeys = {};
+        let player = { x: 100, y: 150, vx: 0, vy: 0, w: 48, h: 48, grounded: false, facing: 1, squashX: 1, squashY: 1 };
+        let coins = [];
+        let bullets = [];
+        let particles = [];
+        let trailHistory = [];
+        let shakeTimer = 0;
+        let score = 0;
+        let sandboxAnimTick = 0;
+
+        function resetSandboxCoins() {
+            score = 0;
+            bullets = [];
+            particles = [];
+            trailHistory = [];
+            document.getElementById('sandbox-score').textContent = score;
+            coins = [
+                { x: 240, y: 210, collected: false },
+                { x: 340, y: 165, collected: false },
+                { x: 460, y: 130, collected: false },
+                { x: 580, y: 210, collected: false }
+            ];
+        }
+
+        function spawnParticles(x, y, color, count = 8) {
+            if (!document.getElementById('juice-particles')?.checked) return;
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 1.5 + Math.random() * 3.5;
+                particles.push({
+                    x, y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed - 1.5,
+                    life: 18 + Math.random() * 12,
+                    size: 4 + Math.random() * 4,
+                    color
+                });
+            }
+        }
+
+        function triggerScreenShake(framesCount = 8) {
+            if (document.getElementById('juice-shake')?.checked) {
+                shakeTimer = framesCount;
+            }
+        }
+
+        function sandboxJumpAction() {
+            if (player.grounded) {
+                player.vy = -10.5;
+                player.grounded = false;
+                player.squashX = 0.78;
+                player.squashY = 1.25;
+                spawnParticles(player.x + player.w / 2, player.y + player.h, activePalette[3]?.hex || '#06b6d4', 7);
+                playCurrentSfx();
+            }
+        }
+
+        function sandboxShootAction() {
+            const bulletColor = activePalette[2]?.hex || '#f43f5e';
+            bullets.push({
+                x: player.facing === 1 ? player.x + player.w : player.x - 10,
+                y: player.y + player.h * 0.45,
+                vx: player.facing * 9.5,
+                color: bulletColor
+            });
+            player.vx -= player.facing * 1.8; // Pequeño retroceso
+            triggerScreenShake(5);
+            spawnParticles(player.x + player.w / 2, player.y + player.h / 2, bulletColor, 5);
+            playCurrentSfx();
+        }
+
+        window.addEventListener('keydown', e => {
+            sandboxKeys[e.code] = true;
+            if (document.getElementById('view-sandbox').classList.contains('hidden')) return;
+            if (e.code === 'Space' || e.code === 'KeyW' || e.code === 'ArrowUp') {
+                e.preventDefault();
+                sandboxJumpAction();
+            } else if (e.code === 'KeyF' || e.code === 'KeyJ' || e.code === 'Enter') {
+                e.preventDefault();
+                sandboxShootAction();
+            }
+        });
+        window.addEventListener('keyup', e => {
+            sandboxKeys[e.code] = false;
+        });
+
+        document.getElementById('sandbox-canvas')?.addEventListener('mousedown', () => {
+            sandboxShootAction();
+        });
+
+        // Controles táctiles sandbox
+        const setupTouchBtn = (id, code, actionFn = null) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.addEventListener('touchstart', e => {
+                e.preventDefault();
+                if (code) sandboxKeys[code] = true;
+                if (actionFn) actionFn();
+            }, { passive: false });
+            el.addEventListener('touchend', () => {
+                if (code) sandboxKeys[code] = false;
+            });
+        };
+        setupTouchBtn('touch-left', 'ArrowLeft');
+        setupTouchBtn('touch-right', 'ArrowRight');
+        setupTouchBtn('touch-jump', 'Space', sandboxJumpAction);
+        setupTouchBtn('touch-shoot', null, sandboxShootAction);
+
+        function initSandbox() {
+            if (coins.length === 0) resetSandboxCoins();
+            if (!sandboxRunning) {
+                sandboxRunning = true;
+                requestAnimationFrame(updateSandboxLoop);
+            }
+        }
+
+        function drawSpriteOnSandbox(ctx, grid, x, y, w, h, facing = 1, alpha = 1) {
+            const pxSize = w / gridSize;
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            if (facing === -1) {
+                ctx.translate(x + w, y);
+                ctx.scale(-1, 1);
+            } else {
+                ctx.translate(x, y);
+            }
+
+            for (let gy = 0; gy < gridSize; gy++) {
+                for (let gx = 0; gx < gridSize; gx++) {
+                    if (grid[gy][gx]) {
+                        ctx.fillStyle = grid[gy][gx];
+                        ctx.fillRect(gx * pxSize, gy * pxSize, Math.ceil(pxSize), Math.ceil(pxSize));
+                    }
+                }
+            }
+            ctx.restore();
+        }
+
+        function updateSandboxLoop() {
+            const view = document.getElementById('view-sandbox');
+            if (view.classList.contains('hidden')) {
+                sandboxRunning = false;
+                return;
+            }
+
+            const canvas = document.getElementById('sandbox-canvas');
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width || 800;
+            canvas.height = rect.height || 380;
+            const ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = false;
+
+            const w = canvas.width;
+            const h = canvas.height;
+            const groundY = h - 56;
+
+            // Colores tomados dinámicamente de la paleta activa
+            const bgCol = activePalette[0]?.hex || '#0f172a';
+            const platCol = activePalette[1]?.hex || '#1e293b';
+            const accentCol = activePalette[3]?.hex || '#06b6d4';
+            const coinCol = activePalette[4]?.hex || '#10b981';
+
+            // Física del jugador
+            const wasGrounded = player.grounded;
+            const speed = 4.4;
+            if (sandboxKeys['ArrowLeft'] || sandboxKeys['KeyA']) {
+                player.vx = -speed;
+                player.facing = -1;
+            } else if (sandboxKeys['ArrowRight'] || sandboxKeys['KeyD']) {
+                player.vx = speed;
+                player.facing = 1;
+            } else {
+                player.vx *= 0.78;
+            }
+
+            player.vy += 0.52; // Gravedad
+            player.x += player.vx;
+            player.y += player.vy;
+
+            // Recuperación suave de Squash & Stretch
+            player.squashX += (1 - player.squashX) * 0.18;
+            player.squashY += (1 - player.squashY) * 0.18;
+
+            // Límites horizontales
+            if (player.x < 10) player.x = 10;
+            if (player.x + player.w > w - 10) player.x = w - 10 - player.w;
+
+            // Plataforma elevada flotante
+            const plat = { x: w * 0.35, y: groundY - 90, w: 176, h: 24 };
+            if (player.vy >= 0 &&
+                player.x + player.w * 0.7 > plat.x &&
+                player.x + player.w * 0.3 < plat.x + plat.w &&
+                player.y + player.h >= plat.y &&
+                player.y + player.h <= plat.y + 18) {
+                player.y = plat.y - player.h;
+                player.vy = 0;
+                player.grounded = true;
+            }
+
+            // Suelo principal
+            if (player.y + player.h >= groundY) {
+                player.y = groundY - player.h;
+                player.vy = 0;
+                player.grounded = true;
+            }
+
+            // Efecto Juice al aterrizar
+            if (!wasGrounded && player.grounded) {
+                player.squashX = 1.24;
+                player.squashY = 0.76;
+                spawnParticles(player.x + player.w / 2, player.y + player.h, accentCol, 6);
+            }
+
+            // Aplicar Screen Shake
+            ctx.save();
+            if (shakeTimer > 0) {
+                shakeTimer--;
+                const dx = (Math.random() - 0.5) * 8;
+                const dy = (Math.random() - 0.5) * 8;
+                ctx.translate(dx, dy);
+            }
+
+            // Renderizar fondo usando color de paleta
+            ctx.fillStyle = bgCol;
+            ctx.fillRect(0, 0, w, h);
+
+            // Cuadrícula decorativa sutil de fondo
+            ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+            ctx.lineWidth = 1;
+            for (let gx = 0; gx < w; gx += 32) {
+                ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, h); ctx.stroke();
+            }
+
+            const useCustomTile = document.getElementById('sandbox-use-tile')?.checked;
+            const tileGrid = frames[0];
+
+            // Dibujar Suelo
+            if (useCustomTile && tileGrid) {
+                const tileSize = 32;
+                for (let tx = 0; tx < w; tx += tileSize) {
+                    for (let ty = groundY; ty < h; ty += tileSize) {
+                        drawSpriteOnSandbox(ctx, tileGrid, tx, ty, tileSize, tileSize, 1, 1);
+                    }
+                }
+            } else {
+                ctx.fillStyle = platCol;
+                ctx.fillRect(0, groundY, w, h - groundY);
+                ctx.fillStyle = accentCol;
+                ctx.fillRect(0, groundY, w, 4);
+            }
+
+            // Dibujar Plataforma flotante
+            if (useCustomTile && tileGrid) {
+                for (let tx = plat.x; tx < plat.x + plat.w; tx += 24) {
+                    drawSpriteOnSandbox(ctx, tileGrid, tx, plat.y, 24, 24, 1, 1);
+                }
+            } else {
+                ctx.fillStyle = platCol;
+                ctx.fillRect(plat.x, plat.y, plat.w, plat.h);
+                ctx.fillStyle = accentCol;
+                ctx.fillRect(plat.x, plat.y, plat.w, 3);
+            }
+
+            // Actualizar y dibujar proyectiles
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const b = bullets[i];
+                b.x += b.vx;
+                ctx.fillStyle = b.color;
+                ctx.fillRect(b.x, b.y, 12, 6);
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(b.x + 2, b.y + 1, 6, 2);
+
+                if (b.x < -20 || b.x > w + 20) {
+                    bullets.splice(i, 1);
+                }
+            }
+
+            // Dibujar y comprobar ítems coleccionables
+            sandboxAnimTick++;
+            coins.forEach((c, idx) => {
+                if (c.collected) return;
+                const cx = Math.min(w - 40, c.x);
+                const cy = Math.min(groundY - 30, c.y) + Math.sin((sandboxAnimTick + idx * 15) * 0.08) * 4;
+
+                ctx.fillStyle = coinCol;
+                ctx.fillRect(cx, cy, 16, 16);
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(cx + 4, cy + 4, 4, 4);
+
+                // Colisión jugador-ítem o disparo-ítem
+                const hitByPlayer = player.x < cx + 16 && player.x + player.w > cx &&
+                                    player.y < cy + 16 && player.y + player.h > cy;
+                const hitByBullet = bullets.some(b => b.x < cx + 16 && b.x + 12 > cx && b.y < cy + 16 && b.y + 6 > cy);
+
+                if (hitByPlayer || hitByBullet) {
+                    c.collected = true;
+                    score++;
+                    document.getElementById('sandbox-score').textContent = score;
+                    spawnParticles(cx + 8, cy + 8, coinCol, 12);
+                    triggerScreenShake(6);
+                    playCurrentSfx();
+                }
+            });
+
+            // Estela de movimiento (Juice Trail)
+            const frameIdx = Math.floor(sandboxAnimTick / 10) % frames.length;
+            const spriteGrid = frames[frameIdx] || frames[0];
+
+            if (document.getElementById('juice-trail')?.checked && Math.abs(player.vx) > 1.2 && sandboxAnimTick % 3 === 0) {
+                trailHistory.push({ x: player.x, y: player.y, facing: player.facing, alpha: 0.35 });
+                if (trailHistory.length > 5) trailHistory.shift();
+            }
+
+            for (let i = trailHistory.length - 1; i >= 0; i--) {
+                const tr = trailHistory[i];
+                tr.alpha -= 0.04;
+                if (tr.alpha <= 0) {
+                    trailHistory.splice(i, 1);
+                } else {
+                    drawSpriteOnSandbox(ctx, spriteGrid, tr.x, tr.y, player.w, player.h, tr.facing, tr.alpha);
+                }
+            }
+
+            // Dibujar Sprite del Jugador con Squash & Stretch
+            const drawW = player.w * player.squashX;
+            const drawH = player.h * player.squashY;
+            const drawX = player.x + (player.w - drawW) / 2;
+            const drawY = player.y + (player.h - drawH);
+            drawSpriteOnSandbox(ctx, spriteGrid, drawX, drawY, drawW, drawH, player.facing, 1);
+
+            // Actualizar y dibujar partículas
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.15;
+                p.life--;
+                ctx.fillStyle = p.color;
+                ctx.fillRect(p.x, p.y, p.size, p.size);
+                if (p.life <= 0) particles.splice(i, 1);
+            }
+
+            ctx.restore();
+            requestAnimationFrame(updateSandboxLoop);
+        }
+
+        /* ==========================================================================
+           INICIALIZACIÓN GLOBAL AL CARGAR LA VENTANA
+           ========================================================================== */
+        window.onload = function () {
+            renderPaletteEditor();
+            initSpriteEditor();
+            syncSfxUI();
+            drawSfxWaveform();
+            initSequencerPattern();
+            generateAllNarrative(true);
+        };
+    </script>
+</body>
+</html>
